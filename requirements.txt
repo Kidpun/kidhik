@@ -1,0 +1,11 @@
+telethon
+spotipy
+python-dotenv
+aiohttp
+yandex-music
+pytz
+deep-translator
+yt-dlp
+Pillow
+shazamio
+psutil

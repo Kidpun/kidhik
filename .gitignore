@@ -1,0 +1,48 @@
+# === КОНФИДЕНЦИАЛЬНОЕ — НИКОГДА НЕ КОММИТИТЬ ===
+.env
+*.session
+sessions_local/
+data/users.db
+data/spotify_tokens.json
+data/ignore_list.json
+bot_stats.json
+saved_media/
+temp_media/
+deleted_messages/
+kidhik.log
+*.log
+
+# === Python ===
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+venv/
+.venv/
+env/
+.Python
+
+# === IDE ===
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# === Кеш ===
+.cache
+.cache/
+.cline_backup/
+
+# === Прочее ===
+yandex_callback.html
+export_session*.py
+decode_friend_string.py
+kidhik.service
+deploy.sh
+install.sh
+.cache
