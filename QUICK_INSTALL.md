@@ -3,7 +3,7 @@
 Если у вас Python 3.14 и возникают проблемы с компиляцией aiohttp, выполните:
 
 ```bash
-cd /Users/kid/Desktop/python/scr/kidhik
+cd ~/kidhik
 
 # Шаг 1: Обновите pip
 pip3 install --upgrade pip setuptools wheel

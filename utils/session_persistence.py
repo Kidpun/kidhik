@@ -134,7 +134,7 @@ class SessionPersistence:
                 last_active = datetime.fromisoformat(state['last_active'])
                 if (now - last_active).days > days:
                     to_remove.append(uid)
-            except:
+            except Exception:
                 pass
         
         for uid in to_remove:

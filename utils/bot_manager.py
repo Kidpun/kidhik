@@ -111,7 +111,7 @@ async def bot_api_request(method, data=None, retries=3):
                                     return None
                             
                             error_text = description or str(error_json)
-                        except:
+                        except Exception:
                             error_text = await resp.text()
                         
                         # Логируем только критические ошибки (не 400 для callback query)
@@ -517,7 +517,7 @@ async def handle_message_update(message):
                     try:
                         if client.is_connected():
                             await client.disconnect()
-                    except:
+                    except Exception:
                         pass
                     await asyncio.sleep(1)
                     await client.connect()
@@ -529,7 +529,7 @@ async def handle_message_update(message):
                     try:
                         if client.is_connected():
                             await client.disconnect()
-                    except:
+                    except Exception:
                         pass
                     await asyncio.sleep(1)
                     await client.connect()
@@ -541,7 +541,7 @@ async def handle_message_update(message):
             try:
                 if client.is_connected():
                     await client.disconnect()
-            except:
+            except Exception:
                 pass
             error_msg = str(e)
             if "AuthRestartError" in error_msg or "Restart the authorization" in error_msg:
@@ -598,7 +598,7 @@ async def handle_message_update(message):
             # Успех - закрываем клиент авторизации
             try:
                 await client.disconnect()
-            except:
+            except Exception:
                 pass
             
             dev_model, sys_ver, app_ver = state.get('device_params') or get_random_device()
@@ -648,7 +648,7 @@ async def handle_message_update(message):
                 await asyncio.sleep(1)
                 await client.connect()
                 await send_message(chat_id, "⚠️ <b>Проблема с подключением</b>\n\nПопробуйте ввести код еще раз.")
-            except:
+            except Exception:
                 await send_message(chat_id, "❌ <b>Ошибка подключения</b>\n\nНе удалось подключиться к Telegram. Начните процесс авторизации заново.")
                 if user_id in auth_states:
                     del auth_states[user_id]
@@ -658,7 +658,7 @@ async def handle_message_update(message):
             try:
                 if client and client.is_connected():
                     await client.disconnect()
-            except:
+            except Exception:
                 pass
             error_msg = str(e)
             if "disconnected" in error_msg.lower():
@@ -688,7 +688,7 @@ async def handle_message_update(message):
             # Успех - закрываем клиент авторизации
             try:
                 await client.disconnect()
-            except:
+            except Exception:
                 pass
             
             dev_model, sys_ver, app_ver = state.get('device_params') or get_random_device()
@@ -726,7 +726,7 @@ async def handle_message_update(message):
                 await asyncio.sleep(1)
                 await client.connect()
                 await send_message(chat_id, "⚠️ <b>Проблема с подключением</b>\n\nПопробуйте ввести пароль еще раз.")
-            except:
+            except Exception:
                 await send_message(chat_id, "❌ <b>Ошибка подключения</b>\n\nНе удалось подключиться к Telegram. Начните процесс авторизации заново.")
                 if user_id in auth_states:
                     del auth_states[user_id]
@@ -736,7 +736,7 @@ async def handle_message_update(message):
             try:
                 if client and client.is_connected():
                     await client.disconnect()
-            except:
+            except Exception:
                 pass
             error_msg = str(e)
             if "disconnected" in error_msg.lower():
@@ -1045,7 +1045,7 @@ async def handle_callback_query(callback):
         logger.error(f"Ошибка обработки callback query для {user_id}: {e}", exc_info=True)
         try:
             await send_message(chat_id, f"❌ Произошла ошибка. Попробуйте начать заново с /start")
-        except:
+        except Exception:
             pass
 
 async def start_bot_manager():

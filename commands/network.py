@@ -97,14 +97,14 @@ async def check_domain_info(domain: str) -> dict:
                 a_records = socket.gethostbyname_ex(domain)
                 result['dns']['ip'] = a_records[2][0] if a_records[2] else None
                 result['dns']['aliases'] = a_records[1] if a_records[1] else []
-            except:
+            except Exception:
                 result['dns']['ip'] = None
             
             # MX записи
             try:
                 mx_records = socket.getaddrinfo(domain, None, socket.AF_INET)
                 # Это не совсем MX, но пока так
-            except:
+            except Exception:
                 pass
         except Exception as e:
             logger.debug(f"DNS lookup error: {e}")
@@ -132,7 +132,7 @@ async def check_domain_info(domain: str) -> dict:
             sock.settimeout(3)
             result['dns']['online'] = sock.connect_ex((result['dns'].get('ip') or domain, 80)) == 0
             sock.close()
-        except:
+        except Exception:
             result['dns']['online'] = False
         
         return result
@@ -242,7 +242,7 @@ async def ip_command(event: events.NewMessage.Event):
     
     try:
         await status_msg.delete()
-    except:
+    except Exception:
         pass
     
     if 'error' in info:
@@ -347,7 +347,7 @@ async def domain_command(event: events.NewMessage.Event):
     
     try:
         await status_msg.delete()
-    except:
+    except Exception:
         pass
     
     if 'error' in info:
@@ -405,7 +405,7 @@ async def whois_command(event: events.NewMessage.Event):
     
     try:
         await status_msg.delete()
-    except:
+    except Exception:
         pass
     
     if 'error' in info:

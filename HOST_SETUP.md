@@ -110,7 +110,7 @@ API_HASH=ваш_api_hash
 BOT_TOKEN=ваш_bot_token
 
 # ID владельца бота
-OWNER_ID=7591325579
+OWNER_ID=123456789
 
 # Spotify API (опционально)
 SPOTIFY_CLIENT_ID=

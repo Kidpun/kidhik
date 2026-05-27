@@ -33,7 +33,7 @@ async def save_self_destruct_photo(event, client, user_id: int):
         try:
             chat = await event.get_chat()
             chat_title = getattr(chat, 'title', None) or getattr(chat, 'first_name', None) or 'Чат'
-        except:
+        except Exception:
             chat_title = "Чат"
         
         # Получаем информацию об отправителе
@@ -42,7 +42,7 @@ async def save_self_destruct_photo(event, client, user_id: int):
             sender_name = getattr(sender, 'first_name', 'Unknown')
             from utils.username_helper import get_user_username
             sender_username = await get_user_username(client, sender)
-        except:
+        except Exception:
             sender_name = "User"
             sender_username = None
         
@@ -272,7 +272,7 @@ async def save_deleted_message(chat_id, message_id, text, media_info=None, media
             
         if media_path and os.path.exists(media_path):
             try: os.remove(media_path)
-            except: pass
+            except Exception: pass
         
     except Exception as e:
         error_msg = str(e)

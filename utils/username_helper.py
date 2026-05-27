@@ -30,7 +30,7 @@ async def get_user_username(client, user_entity):
             try:
                 full_user_info = await client.get_full_user(user_entity)
                 full_user = full_user_info.user
-            except:
+            except Exception:
                 # Если get_full_user не работает, пробуем get_entity
                 full_user = await client.get_entity(user_entity)
             

@@ -156,7 +156,7 @@ def register_handlers(client, owner_id=None):
             if BOT_TOKEN:
                 try:
                     manager_id = int(BOT_TOKEN.split(':')[0])
-                except: pass
+                except Exception: pass
                 
             if manager_id and event.chat_id == manager_id:
                 return
@@ -189,7 +189,7 @@ def register_handlers(client, owner_id=None):
                     
                     try:
                         await event.reply(warning_msg, parse_mode='html')
-                    except:
+                    except Exception:
                         pass  # Если не удалось отправить, просто игнорируем
                     
                     logger.info(f"🚫 Команда {cmd_key} заблокирована для {current_me_id} (карантин: {seconds_left}с)")
@@ -210,7 +210,7 @@ def register_handlers(client, owner_id=None):
                         logger.error(f"Ошибка выполнения команды {text}: {e}", exc_info=True)
                         try:
                             await event.reply(f"❌ Ошибка выполнения команды: {e}")
-                        except:
+                        except Exception:
                             pass
                     return
 
@@ -230,7 +230,7 @@ def register_handlers(client, owner_id=None):
                          logger.error(f"Ошибка выполнения команды {cmd_key}: {e}", exc_info=True)
                          try:
                              await event.reply(f"❌ Ошибка выполнения команды: {e}")
-                         except:
+                         except Exception:
                              pass
                      return
 
@@ -248,7 +248,7 @@ def register_handlers(client, owner_id=None):
                         logger.error(f"Ошибка выполнения команды {cmd_key}: {e}", exc_info=True)
                         try:
                             await event.reply(f"❌ Ошибка выполнения команды: {e}")
-                        except:
+                        except Exception:
                             pass
                     return
                 

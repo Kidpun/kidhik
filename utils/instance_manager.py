@@ -100,7 +100,7 @@ class MultiInstanceManager:
                 logger.warning(f"Клиент {user_id} не авторизован, удаляем из БД")
                 try:
                     await client.disconnect()
-                except:
+                except Exception:
                     pass
                 remove_user(user_id)
                 return
@@ -210,7 +210,7 @@ class MultiInstanceManager:
                                 "• Вход с другого IP\n\n"
                                 "Пожалуйста, подключитесь заново через /start"
                             )
-                        except:
+                        except Exception:
                             pass
                         
                         logger.critical(f"🔴 Клиент {user_id} требует переавторизации!")
@@ -248,7 +248,7 @@ class MultiInstanceManager:
                     client = self.clients[user_id]
                     if client.is_connected():
                         await client.disconnect()
-                except:
+                except Exception:
                     pass
                 del self.clients[user_id]
             
@@ -335,7 +335,7 @@ class MultiInstanceManager:
                                         "Ваша сессия больше не авторизована.\n"
                                         "Пожалуйста, подключитесь заново через /start"
                                     )
-                                except:
+                                except Exception:
                                     pass
                                 continue
                         except asyncio.TimeoutError:
@@ -361,7 +361,7 @@ class MultiInstanceManager:
                                     session_file = f"sessions_local/{uid}.session"
                                     if os.path.exists(session_file):
                                         os.remove(session_file)
-                                except:
+                                except Exception:
                                     pass
                                 await self.stop_client(uid)
                                 remove_user(uid)
@@ -374,7 +374,7 @@ class MultiInstanceManager:
                                         "Health check обнаружил что Telegram удалил вашу сессию.\n"
                                         "Подключитесь заново через /start"
                                     )
-                                except:
+                                except Exception:
                                     pass
                             else:
                                 logger.warning(f"⚠️ Ошибка при ping клиента {uid}: {e}")
@@ -405,7 +405,7 @@ class MultiInstanceManager:
         if user_id in self.clients:
             client = self.clients[user_id]
             try: await client.disconnect()
-            except: pass
+            except Exception: pass
             del self.clients[user_id]
         
         # Очищаем время готовности

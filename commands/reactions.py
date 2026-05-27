@@ -311,7 +311,7 @@ async def auto_react_to_message(event: events.NewMessage.Event, client, user_id:
                 try:
                     chat = await event.get_chat()
                     chat_title = getattr(chat, 'title', None) or getattr(chat, 'first_name', None) or 'Чат'
-                except:
+                except Exception:
                     chat_title = "Чат"
                 
                 # Реакции недоступны - значит они ограничены в чате

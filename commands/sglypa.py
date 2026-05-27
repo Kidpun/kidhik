@@ -151,8 +151,8 @@ async def _periodic_cache_cleanup():
                 for f in temp_dir.iterdir():
                     try: 
                         if f.is_file(): os.remove(f)
-                    except: pass
-        except:
+                    except Exception: pass
+        except Exception:
             pass
 
 def _generate_glitch_text(messages):

@@ -43,14 +43,14 @@ class YandexMusicManager:
         try:
             with open(self.tokens_file, 'r', encoding='utf-8') as f:
                 return json.load(f)
-        except:
+        except Exception:
             return {}
     
     def _save_tokens(self):
         try:
             with open(self.tokens_file, 'w', encoding='utf-8') as f:
                 json.dump(self.user_tokens, f, indent=2, ensure_ascii=False)
-        except:
+        except Exception:
             pass
     
     def has_credentials(self, user_id: int) -> bool:
@@ -117,7 +117,7 @@ class YandexMusicManager:
         
         try:
             return Client(self.user_tokens[uid]).init()
-        except:
+        except Exception:
             return None
     
     async def get_current_track(self, user_id: int) -> Optional[Dict]:

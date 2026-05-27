@@ -151,7 +151,7 @@ async def info_command(event: events.NewMessage.Event):
         try:
             full_user = await event.client.get_entity(user_id)
             bio = getattr(full_user, 'about', None) or "не указано"
-        except:
+        except Exception:
             bio = "не доступно"
         
         # Вычисляем примерную дату регистрации
@@ -207,7 +207,7 @@ async def info_command(event: events.NewMessage.Event):
                             text += f"🔴 <b>Был(а) онлайн:</b> {minutes} мин. назад\n"
                         else:
                             text += f"🔴 <b>Был(а) онлайн:</b> только что\n"
-                except:
+                except Exception:
                     text += f"🔴 <b>Оффлайн</b>\n"
             elif status_type == 'UserStatusRecently':
                 text += f"🟡 <b>Был(а) недавно</b>\n"

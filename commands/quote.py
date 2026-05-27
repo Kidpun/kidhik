@@ -25,7 +25,7 @@ def create_quote_image(text, author_name, avatar_bytes=None):
     try:
         font = ImageFont.truetype("DejaVuSans.ttf", font_size)
         name_font = ImageFont.truetype("DejaVuSans-Bold.ttf", font_size)
-    except:
+    except Exception:
         font = ImageFont.load_default()
         name_font = ImageFont.load_default()
 
@@ -54,7 +54,7 @@ def create_quote_image(text, author_name, avatar_bytes=None):
             mask_draw.ellipse((0, 0, avatar_size, avatar_size), fill=255)
             
             img.paste(avatar, (padding, padding), mask)
-        except:
+        except Exception:
             pass # Если ошибка с аватаркой, пропускаем
     else:
         # Плейсхолдер
@@ -105,4 +105,4 @@ async def quote_command(event: events.NewMessage.Event):
     except Exception as e:
         logger.error(f"Quote gen error: {e}")
         try: await event.edit(f"❌ Ошибка: {e}")
-        except: pass
+        except Exception: pass

@@ -101,7 +101,7 @@ API_HASH=ваш_api_hash
 BOT_TOKEN=ваш_bot_token
 
 # ID владельца бота (ваш Telegram ID)
-OWNER_ID=7591325579
+OWNER_ID=123456789
 
 # Spotify API (опционально, для функции музыки)
 SPOTIFY_CLIENT_ID=ваш_spotify_client_id

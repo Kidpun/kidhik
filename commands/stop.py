@@ -43,7 +43,7 @@ async def stop_command(event: events.NewMessage.Event):
             # Деактивируем все сглыпы
             for chat_id in list(active_sglypa_chats.keys()):
                 active_sglypa_chats[chat_id] = False
-    except:
+    except Exception:
         pass
     
     # Останавливаем реакции для этого пользователя

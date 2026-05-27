@@ -131,7 +131,7 @@ async def send_to_user(user_id: int, text: str, photo_path: Path = None, documen
                                 logger.warning(f"Чат с пользователем {user_id} не найден")
                             else:
                                 logger.error(f"Ошибка отправки сообщения: {resp.status} - {error_text}")
-                        except:
+                        except Exception:
                             logger.error(f"Ошибка отправки сообщения: {resp.status} - {error_text}")
         
     except asyncio.TimeoutError:

@@ -22,7 +22,7 @@
 
 1. **Установите зависимости:**
 ```bash
-cd /Users/kid/Desktop/python/scr/kidhik
+cd ~/kidhik
 pip3 install -r requirements.txt
 ```
 

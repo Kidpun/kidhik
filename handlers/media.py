@@ -154,7 +154,7 @@ async def deleted_message_handler(event: events.MessageDeleted.Event, client, us
                     if s: sender_name = getattr(s, 'first_name', "User")
                     c = await cached_msg.get_chat()
                     if c: chat_title = getattr(c, 'title', chat_title)
-                except: pass
+                except Exception: pass
                 
                 await save_deleted_message(
                     chat_id or 0, msg_id, text, media_info, media_path,
@@ -167,7 +167,7 @@ async def deleted_message_handler(event: events.MessageDeleted.Event, client, us
             try:
                 s = await cached_msg.get_sender()
                 if s: sender_name = getattr(s, 'first_name', "User")
-            except: pass
+            except Exception: pass
             
             if is_batch:
                 batch_lines.append(f"👤 <b>{sender_name}:</b> {text[:100]}") # Обрезаем длинные
@@ -182,7 +182,7 @@ async def deleted_message_handler(event: events.MessageDeleted.Event, client, us
                         sender_username = await get_user_username(client, s) or ""
                     c = await cached_msg.get_chat()
                     if c: chat_title = getattr(c, 'title', chat_title)
-                except: pass
+                except Exception: pass
                 
                 await save_deleted_message(
                     chat_id or 0, msg_id, text, None, None,
@@ -255,7 +255,7 @@ async def edited_message_handler(event: events.MessageEdited.Event, client, user
             chat = await event.get_chat()
             if chat:
                 chat_title = getattr(chat, 'title', chat_title)
-        except: pass
+        except Exception: pass
 
         await save_edited_message(
             chat_id, msg_id, old_text, new_text,

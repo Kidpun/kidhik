@@ -68,8 +68,13 @@ def get_aiohttp_proxy() -> str | None:
 
 
 def proxy_info() -> str:
-    """Возвращает читаемую информацию о прокси для .помощь"""
+    """Возвращает читаемую информацию о прокси для .помощь (без логина/пароля)"""
     if not PROXY_URL:
         return "❌ Прокси не настроен"
-    parsed = urlparse(PROXY_URL)
-    return f"✅ {parsed.scheme}://{parsed.hostname}:{parsed.port}"
+    try:
+        parsed = urlparse(PROXY_URL)
+        if not parsed.hostname:
+            return "⚠️ Прокси задан, но URL некорректный"
+        return f"✅ {parsed.scheme}://{parsed.hostname}:{parsed.port or '?'}"
+    except Exception:
+        return "⚠️ Прокси задан, но URL некорректный"

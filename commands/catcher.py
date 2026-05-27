@@ -60,7 +60,7 @@ async def toggle_catcher(event: events.NewMessage.Event):
     status = "🟢 <b>ВКЛЮЧЕН</b>" if CATCHER_ACTIVE else "🔴 <b>ВЫКЛЮЧЕН</b>"
     try:
         await event.edit(f"💰 <b>Ловец чеков CryptoBot</b>\nСтатус: {status}", parse_mode='html')
-    except:
+    except Exception:
         await event.respond(f"💰 <b>Ловец чеков CryptoBot</b>\nСтатус: {status}", parse_mode='html')
 
 async def check_catcher_handler(event):
@@ -142,7 +142,7 @@ async def activate_check(client, code, original_text):
                             break
                         elif "неверный" in resp2.text.lower():
                             logger.info(f"❌ [Catcher] Неверный пароль: {pwd}")
-                    except:
+                    except Exception:
                         break
                         
             elif "подпишитесь" in text_resp:

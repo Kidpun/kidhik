@@ -165,7 +165,7 @@ async def probiv_command(event: events.NewMessage.Event):
     local_info = await check_local_base(normalized)
     
     try: await status_msg.delete()
-    except: pass
+    except Exception: pass
     
     # --- СБОРКА ОТЧЕТА ---
     res = f"🕵️‍♂️ <b>Досье на номер:</b> <code>{normalized}</code>\n\n"

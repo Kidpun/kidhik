@@ -54,7 +54,7 @@ async def _snos_progress(user_id: int, chat_id: int, client):
             if not user_manager.is_active(user_id) or user_manager.get_active_command(user_id) != "снос":
                 try:
                     await progress_msg.delete()
-                except:
+                except Exception:
                     pass
                 break
             
@@ -78,7 +78,7 @@ async def _snos_progress(user_id: int, chat_id: int, client):
                 # Пробуем снова
                 try:
                     await progress_msg.edit(f"НАЧИНАЮ СНОС - {percentage}%")
-                except:
+                except Exception:
                     pass
             except Exception as e:
                 logger.error(f"Error editing snos message: {e}")
@@ -104,7 +104,7 @@ async def _snos_progress(user_id: int, chat_id: int, client):
                         "ОШИБКА СНОСА\n"
                         "причина: его защищает аллах"
                     )
-                except:
+                except Exception:
                     pass
             except Exception as e:
                 logger.error(f"Error editing final snos message: {e}")
@@ -117,7 +117,7 @@ async def _snos_progress(user_id: int, chat_id: int, client):
         logger.info(f"Snos progress cancelled for user {user_id}")
         try:
             await progress_msg.delete()
-        except:
+        except Exception:
             pass
     except Exception as e:
         logger.error(f"Error in snos progress for user {user_id}: {e}")

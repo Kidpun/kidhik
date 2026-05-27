@@ -45,14 +45,14 @@ class SpotifyManager:
         try:
             with open(self.tokens_file, 'r', encoding='utf-8') as f:
                 return json.load(f)
-        except:
+        except Exception:
             return {}
     
     def _save_tokens(self):
         try:
             with open(self.tokens_file, 'w', encoding='utf-8') as f:
                 json.dump(self.user_tokens, f, indent=2, ensure_ascii=False)
-        except:
+        except Exception:
             pass
     
     def has_credentials(self, user_id: int) -> bool:
@@ -105,7 +105,7 @@ class SpotifyManager:
                 self.set_tokens(user_id, token_info["access_token"], token_info["refresh_token"], token_info["expires_at"])
             
             return spotipy.Spotify(auth=token_info["access_token"])
-        except:
+        except Exception:
             return None
     
     def get_auth_url(self) -> Optional[str]:
@@ -118,7 +118,7 @@ class SpotifyManager:
                 cache_path=None
             )
             return oauth.get_authorize_url()
-        except:
+        except Exception:
             return None
     
     def exchange_code_for_tokens(self, code: str) -> Optional[Dict]:

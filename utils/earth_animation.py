@@ -50,7 +50,7 @@ class TerminalDisplay:
         try:
             rows, cols = os.get_terminal_size()
             return rows, cols
-        except:
+        except Exception:
             return 24, 80
     
     def _clear_screen(self):

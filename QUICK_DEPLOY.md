@@ -85,7 +85,7 @@ tail -f /root/kidhik/scr/kidhik/kidhik.log
 API_ID=ваш_api_id
 API_HASH=ваш_api_hash
 BOT_TOKEN=ваш_bot_token
-OWNER_ID=7591325579
+OWNER_ID=123456789
 SPOTIFY_CLIENT_ID=...
 SPOTIFY_CLIENT_SECRET=...
 SPOTIFY_REDIRECT_URI=https://kidwork.live/spotify/callback.html

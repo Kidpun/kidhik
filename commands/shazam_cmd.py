@@ -73,7 +73,7 @@ async def shazam_command(event: events.NewMessage.Event):
                     # Удаляем оригинальный файл после успешной конвертации
                     try:
                         os.remove(downloaded_file)
-                    except:
+                    except Exception:
                         pass
         except (FileNotFoundError, Exception) as e:
             # Если ffmpeg не установлен или ошибка - используем оригинальный файл
@@ -107,7 +107,7 @@ async def shazam_command(event: events.NewMessage.Event):
             if f and os.path.exists(f):
                 try:
                     os.remove(f)
-                except:
+                except Exception:
                     pass
 
         if not out or 'track' not in out:

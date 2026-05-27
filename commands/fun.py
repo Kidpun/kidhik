@@ -34,14 +34,14 @@ async def type_command(event: events.NewMessage.Event):
     args = event.message.text.split()
     try:
         seconds = int(args[1]) if len(args) > 1 else 10
-    except:
+    except Exception:
         seconds = 10
         
     if seconds > 300: seconds = 300 # Лимит 5 минут
     
     try:
         await event.delete()
-    except: pass
+    except Exception: pass
     
     # Имитируем тайпинг
     async with event.client.action(event.chat_id, 'typing'):

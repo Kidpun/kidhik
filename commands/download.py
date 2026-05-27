@@ -22,7 +22,7 @@ def get_ytdlp_version():
     try:
         import yt_dlp
         return yt_dlp.version.__version__
-    except:
+    except Exception:
         return None
 
 async def download_command(event: events.NewMessage.Event):
@@ -161,7 +161,7 @@ async def download_command(event: events.NewMessage.Event):
                     if os.path.exists(filename):
                         try:
                             os.remove(filename)
-                        except:
+                        except Exception:
                             pass
             
             error_msg = "❌ Ошибка скачивания (файл не найден)."

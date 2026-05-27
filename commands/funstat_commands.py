@@ -14,7 +14,7 @@ def format_date(date_str: str) -> str:
     try:
         dt = datetime.fromisoformat(date_str.replace('Z', '+00:00'))
         return dt.strftime("%d.%m.%Y %H:%M")
-    except:
+    except Exception:
         return date_str
 
 
@@ -36,7 +36,7 @@ async def get_target_user_id(event):
                 try:
                     entity = await event.client.get_entity(username)
                     return entity.id
-                except:
+                except Exception:
                     return None
     
     return None

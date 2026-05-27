@@ -83,7 +83,7 @@ async def ignore_command(event: events.NewMessage.Event):
         try:
             chat = await event.client.get_entity(chat_id)
             chat_title = getattr(chat, 'title', getattr(chat, 'first_name', f'Chat {chat_id}'))
-        except:
+        except Exception:
             chat_title = f'Chat {chat_id}'
         
         if is_now_ignored:

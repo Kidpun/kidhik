@@ -21,7 +21,7 @@ python main.py
 ### Вариант 2: Установить предкомпилированные wheels
 
 ```bash
-cd /Users/kid/Desktop/python/scr/kidhik
+cd ~/kidhik
 
 # Обновите pip и установите wheel
 pip3 install --upgrade pip setuptools wheel
@@ -60,7 +60,7 @@ python main.py
 ## Быстрое решение (попробуйте сначала)
 
 ```bash
-cd /Users/kid/Desktop/python/scr/kidhik
+cd ~/kidhik
 pip3 install --upgrade pip setuptools wheel
 pip3 install "aiohttp>=3.9.0" --only-binary :all: || pip3 install aiohttp
 pip3 install aiogram==2.25.1 spotipy python-dotenv

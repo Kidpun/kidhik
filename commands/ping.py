@@ -41,6 +41,6 @@ async def ping_command(event: events.NewMessage.Event):
         # Если не удалось отредактировать (например, сообщение удалено), шлем новое
         try:
             await event.respond("❌ Ошибка пинга")
-        except: pass
+        except Exception: pass
 
 
