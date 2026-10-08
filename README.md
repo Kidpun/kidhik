@@ -226,6 +226,7 @@ kidhik/
 │   └── ...
 ├── data/                   # Runtime данные (gitignored)
 ├── text/                   # Текстовые базы (факты, brainrot и т.д.)
+├── docs/                   # Руководства по установке и настройке
 ├── .env.example            # Шаблон конфига
 └── requirements.txt
 ```
