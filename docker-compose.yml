@@ -1,0 +1,12 @@
+version: "3.8"
+
+services:
+  kidhik:
+    build: .
+    container_name: kidhik_userbot
+    restart: unless-stopped
+    volumes:
+      - ./data:/app/data
+      - ./sessions:/app/sessions
+    env_file:
+      - .env
