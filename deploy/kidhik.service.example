@@ -1,0 +1,15 @@
+[Unit]
+Description=KidHik Userbot Daemon
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/kidhik
+ExecStart=/opt/kidhik/venv/bin/python main.py
+Restart=always
+RestartSec=10
+EnvironmentFile=/opt/kidhik/.env
+
+[Install]
+WantedBy=multi-user.target
