@@ -24,7 +24,7 @@ async def help_command(event: events.NewMessage.Event):
         "• <code>.бреинрот</code> - Случайное название бреинрота\n"
         "• <code>.whoami</code> - Показать личную статистику\n"
         "• <code>.id</code> - Показать ID пользователя/чата\n\n"
-        
+
         "🛠 <b>Утилиты:</b>\n"
         "• <code>.шазам</code> - Распознать трек (реплай на аудио/видео/гс)\n"
         "• <code>.tr [язык]</code> - Переводчик (реплай). Пример: .tr en\n"
@@ -43,7 +43,7 @@ async def help_command(event: events.NewMessage.Event):
         "• <code>.ip &lt;адрес&gt;</code> - Информация об IP-адресе\n"
         "• <code>.домен &lt;домен&gt;</code> - Информация о домене\n"
         "• <code>.whois &lt;домен&gt;</code> - WHOIS информация\n\n"
-        
+
         "🕵️ <b>FunStat (История профилей):</b>\n"
         "• <code>.история @user</code> - Полная история изменений профиля\n"
         "• <code>.юзернейм_история @user</code> - История username\n"
@@ -60,5 +60,5 @@ async def help_command(event: events.NewMessage.Event):
         "🚫 <b>Игнор:</b>\n"
         "• <code>.игнор &lt;ID&gt;</code> - Добавить/убрать чат из игнора (не сохранять логи)"
     )
-    
+
     await event.respond(help_text, parse_mode='html')

@@ -4,7 +4,6 @@
 """
 import logging
 import random
-import re
 import unicodedata
 from telethon import events
 from telethon.errors import ReactionInvalidError, ChatAdminRequiredError, FloodWaitError
@@ -65,10 +64,10 @@ async def reactions_command(event: events.NewMessage.Event):
         user_id = event.sender_id
         chat_id = event.chat_id
         text = event.message.text.strip()
-        
+
         # Ключ для хранения реакций: (user_id, chat_id)
         reaction_key = (user_id, chat_id)
-        
+
         # Парсим команду
         parts = text.split()
         if len(parts) == 1:
@@ -97,7 +96,7 @@ async def reactions_command(event: events.NewMessage.Event):
                     parse_mode='html'
                 )
             return
-        
+
         # Проверяем отключение
         if parts[1].lower() == 'off':
             if reaction_key in user_reactions:
@@ -107,7 +106,7 @@ async def reactions_command(event: events.NewMessage.Event):
                 logger.info(f"No reactions to disable for user {user_id} in chat {chat_id}")
             await event.respond("✅ Реакции отключены для этого чата")
             return
-        
+
         # Извлекаем эмодзи из команды (максимум 3)
         reactions = []
         invalid_emojis = []
@@ -151,7 +150,7 @@ async def reactions_command(event: events.NewMessage.Event):
                     invalid_emojis.append(char)
                     logger.debug(f"No valid emoji found at position {i}: '{char}' (ord: {ord(char)})")
                 i += 1
-        
+
         if invalid_emojis:
             invalid_list = ' '.join(invalid_emojis)
             await event.respond(
@@ -161,7 +160,7 @@ async def reactions_command(event: events.NewMessage.Event):
                 parse_mode='html'
             )
             return
-        
+
         if not reactions:
             await event.respond(
                 "❌ Не указаны эмодзи для реакций.\n\n"
@@ -170,24 +169,24 @@ async def reactions_command(event: events.NewMessage.Event):
                 parse_mode='html'
             )
             return
-        
+
         if len(reactions) > 3:
             await event.respond("❌ Можно указать максимум 3 эмодзи")
             return
-        
+
         # Сохраняем реакции для пользователя и чата
         user_reactions[reaction_key] = reactions
         logger.info(f"Set reactions for user {user_id} in chat {chat_id}: {reactions}. Total active reactions: {len(user_reactions)}")
-        
+
         reactions_text = ' '.join(reactions)
         await event.respond(
             f"✅ <b>Реакции установлены для этого чата:</b> {reactions_text}\n\n"
             f"Теперь бот будет случайно ставить одну из этих реакций на новые сообщения только в этом чате.",
             parse_mode='html'
         )
-        
+
         logger.info(f"Reactions set for user {user_id} in chat {chat_id}: {reactions_text}")
-        
+
     except Exception as e:
         logger.error(f"Ошибка в команде .реакции: {e}", exc_info=True)
         await event.respond("❌ Ошибка при установке реакций")
@@ -199,23 +198,23 @@ async def auto_react_to_message(event: events.NewMessage.Event, client, user_id:
     Только в чатах, где была вызвана команда .реакции
     """
     import time
-    
+
     try:
         chat_id = event.chat_id
         reaction_key = (user_id, chat_id)
-        
+
         # Проверяем, есть ли реакции для этого пользователя и чата
         if reaction_key not in user_reactions or not user_reactions[reaction_key]:
             logger.debug(f"No reactions configured for user {user_id} in chat {chat_id}")
             return
-        
+
         # Пропускаем свои сообщения - проверяем через sender_id события
         # sender_id - это ID отправителя сообщения
         # user_id - это ID владельца бота (наш ID)
         if event.sender_id == user_id:
             logger.debug(f"Skipping own message: sender_id={event.sender_id}, user_id={user_id}")
             return
-        
+
         # Дополнительная проверка через get_me() для надежности
         try:
             me = await client.get_me()
@@ -224,11 +223,11 @@ async def auto_react_to_message(event: events.NewMessage.Event, client, user_id:
                 return
         except Exception as e:
             logger.debug(f"Could not get_me for reaction check: {e}")
-        
+
         # Пропускаем команды
         if event.message.text and event.message.text.strip().startswith('.'):
             return
-        
+
         reactions = user_reactions[reaction_key]
         message_id = event.message.id
 
@@ -279,7 +278,7 @@ async def auto_react_to_message(event: events.NewMessage.Event, client, user_id:
         except Exception as e:
             logger.error(f"❌ Error setting reaction {selected_emoji} in chat {chat_id}: {e}", exc_info=True)
             unavailable_reactions.append(selected_emoji)
-        
+
         # Логируем результат
         if successful_reactions > 0:
             logger.info(f"Set {successful_reactions}/1 reactions in chat {chat_id}")
@@ -291,29 +290,28 @@ async def auto_react_to_message(event: events.NewMessage.Event, client, user_id:
             # Проверяем кеш для этого чата
             cache_key = (user_id, chat_id)
             current_time = time.time()
-            
+
             # Проверяем, не отправляли ли мы недавно сообщение об ошибке для этого чата
             if cache_key in error_message_cache:
                 last_sent = error_message_cache[cache_key]
                 if current_time - last_sent < ERROR_MESSAGE_COOLDOWN:
                     logger.debug(f"Skipping error message for chat {chat_id} (cooldown)")
                     return
-            
+
             # Обновляем кеш
             error_message_cache[cache_key] = current_time
-            
+
             # Проверяем, есть ли у пользователя премиум
             try:
                 me = await client.get_me()
-                has_premium = getattr(me, 'premium', False)
-                
+
                 # Получаем информацию о чате для отправки сообщения
                 try:
                     chat = await event.get_chat()
                     chat_title = getattr(chat, 'title', None) or getattr(chat, 'first_name', None) or 'Чат'
                 except Exception:
                     chat_title = "Чат"
-                
+
                 # Реакции недоступны - значит они ограничены в чате
                 restricted_emojis = ' '.join(unavailable_reactions)
                 logger.warning(f"Reactions restricted in chat {chat_id}: {restricted_emojis}")
@@ -328,7 +326,7 @@ async def auto_react_to_message(event: events.NewMessage.Event, client, user_id:
                 )
             except Exception as e:
                 logger.error(f"Error checking premium status: {e}", exc_info=True)
-        
+
     except Exception as e:
         logger.error(f"Error in auto_react_to_message: {e}", exc_info=True)
 

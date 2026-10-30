@@ -19,9 +19,6 @@ async def coin_command(event: events.NewMessage.Event):
         # Генерируем случайный результат (0 - орел, 1 - решка)
         result = random.choice(['орел', 'решка'])
 
-        # Определяем эмодзи для результата
-        emoji = '🪙' if result == 'орел' else '🪙'
-
         # Отправляем результат
         await event.respond(
             f"🪙 <b>Монетка:</b> {result.upper()}!\n\n"

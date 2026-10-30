@@ -70,7 +70,7 @@ SIMPLE_COMMANDS = {
     ".бреинрот": (brainrot_command, True),
     ".whoami": (whoami_command, True),
     ".статистика": (stats_command, True),
-    
+
     # Не удаляемые (редактируемые или долгие)
     ".пинг": (ping_command, False),
     ".чек": (toggle_catcher, False),
@@ -96,11 +96,11 @@ PREFIX_COMMANDS = {
     ".down": (down_command, False),
     ".инфо": (info_command, False),
     ".реакции": (reactions_command, True),
-    
+
     # Новые с аргументами
     ".кто": (who_command, False),
     ".слежка": (spy_command, False),
-    
+
     ".напомни": (remind_command, False),
 
     # FunStat API команды (история изменений профилей)
@@ -117,14 +117,14 @@ def register_handlers(client, owner_id=None):
     Работает во ВСЕХ чатах пользователя
     """
     me_id = owner_id
-    
+
     async def get_me_id():
         nonlocal me_id
         if me_id is None:
             me = await client.get_me()
             me_id = me.id
         return me_id
-    
+
     # Обработчик ВСЕХ сообщений (входящих и исходящих)
     @client.on(events.NewMessage())
     async def message_handler(event):
@@ -137,17 +137,17 @@ def register_handlers(client, owner_id=None):
                 logger.error(f"Ошибка в catcher: {e}")
 
             current_me_id = await get_me_id()
-            
+
             # Обработка медиа (1-view, таймеры)
             if event.message.media:
                 try:
                     await media_handler(event, client, user_id=current_me_id)
                 except Exception as e:
                     logger.error(f"Ошибка обработки медиа: {e}", exc_info=True)
-            
+
             if not event.message.text:
                 return
-            
+
             text = event.message.text.strip()
             is_own = event.sender_id == current_me_id
 
@@ -157,7 +157,7 @@ def register_handlers(client, owner_id=None):
                 try:
                     manager_id = int(BOT_TOKEN.split(':')[0])
                 except Exception: pass
-                
+
             if manager_id and event.chat_id == manager_id:
                 return
         except Exception as e:
@@ -167,18 +167,18 @@ def register_handlers(client, owner_id=None):
         # Обработка команд (только от себя)
         if is_own:
             cmd_key = text.split()[0].lower() if text else "" # Первое слово (.команда)
-            
+
             # Проверяем, это вообще команда (начинается с точки)?
             if cmd_key.startswith('.'):
                 # ПРИНУДИТЕЛЬНАЯ ПРОВЕРКА: клиент в карантине?
                 from utils.instance_manager import instance_manager
                 is_ready, seconds_left = instance_manager.is_client_ready(current_me_id)
-                
+
                 if not is_ready:
                     # Клиент еще в карантине, игнорируем команду
                     minutes_left = seconds_left // 60
                     seconds_left_display = seconds_left % 60
-                    
+
                     warning_msg = (
                         f"⏳ <b>Карантин безопасности</b>\n\n"
                         f"Команды будут доступны через:\n"
@@ -186,21 +186,21 @@ def register_handlers(client, owner_id=None):
                         f"🔒 Это защита от бана Telegram.\n"
                         f"Новые сессии должны \"прогреться\" перед активностью."
                     )
-                    
+
                     try:
                         await event.reply(warning_msg, parse_mode='html')
                     except Exception:
                         pass  # Если не удалось отправить, просто игнорируем
-                    
+
                     logger.info(f"🚫 Команда {cmd_key} заблокирована для {current_me_id} (карантин: {seconds_left}с)")
                     return  # Прерываем обработку команды
-                
+
                 # 1. Проверка точных команд
                 if text in SIMPLE_COMMANDS:
                     handler, should_delete = SIMPLE_COMMANDS[text]
                     logger.info(f"✅ {text} command detected from self!")
                     if should_delete:
-                        try: 
+                        try:
                             await event.delete()
                         except Exception as e:
                             logger.debug(f"Не удалось удалить сообщение команды: {e}")
@@ -220,7 +220,7 @@ def register_handlers(client, owner_id=None):
                      handler, should_delete = SIMPLE_COMMANDS[cmd_key]
                      logger.info(f"✅ {cmd_key} command detected from self!")
                      if should_delete:
-                        try: 
+                        try:
                             await event.delete()
                         except Exception as e:
                             logger.debug(f"Не удалось удалить сообщение команды: {e}")
@@ -238,7 +238,7 @@ def register_handlers(client, owner_id=None):
                     handler, should_delete = PREFIX_COMMANDS[cmd_key]
                     logger.info(f"✅ {cmd_key} command detected from self!")
                     if should_delete:
-                        try: 
+                        try:
                             await event.delete()
                         except Exception as e:
                             logger.debug(f"Не удалось удалить сообщение команды: {e}")
@@ -251,7 +251,7 @@ def register_handlers(client, owner_id=None):
                         except Exception:
                             pass
                     return
-                
+
                 # Если команда не найдена - логируем и уведомляем пользователя
                 logger.warning(f"⚠️ Неизвестная команда: {cmd_key} (полный текст: {text})")
                 # Не удаляем неизвестные команды, чтобы пользователь видел что он написал
@@ -260,10 +260,10 @@ def register_handlers(client, owner_id=None):
         else:
             # Сохраняем чужие сообщения в кеш
             await save_message_handler(event, user_id=current_me_id)
-            
+
             # Авто-реакции (если включены)
             await auto_react_to_message(event, client, current_me_id)
-    
+
     # Обработчик удаленных сообщений
     @client.on(events.MessageDeleted())
     async def deleted_handler(event):
@@ -272,7 +272,7 @@ def register_handlers(client, owner_id=None):
             await deleted_message_handler(event, client, user_id=current_me_id)
         except Exception as e:
             logger.error(f"Ошибка в deleted_handler: {e}", exc_info=True)
-    
+
     # Обработчик отредактированных сообщений
     @client.on(events.MessageEdited())
     async def edited_handler(event):
@@ -281,7 +281,7 @@ def register_handlers(client, owner_id=None):
             await edited_message_handler(event, client, user_id=current_me_id)
         except Exception as e:
             logger.error(f"Ошибка в edited_handler: {e}", exc_info=True)
-    
+
     # Обработчик кнопок
     @client.on(events.CallbackQuery(pattern=b"stats_.*"))
     async def callback_handler(event):

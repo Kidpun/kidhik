@@ -1,7 +1,7 @@
 """
 Кеш последних сообщений в чатах (изолированный для каждого пользователя)
 """
-from typing import Dict, Optional, Tuple
+from typing import Dict, Tuple
 from collections import deque
 import logging
 
@@ -13,7 +13,7 @@ class MessageCache:
     Кеш последних сообщений для каждого пользователя и его чатов.
     Теперь автоматически очищает старые ID при переполнении.
     """
-    
+
     def __init__(self, max_size: int = 500, max_chats: int = 50):
         """
         :param max_size: Максимальное количество сообщений на чат
@@ -27,13 +27,13 @@ class MessageCache:
         self.by_id: Dict[Tuple[int, int], Dict[int, object]] = {}
         # Для LRU - храним последний доступ к каждому чату
         self.last_access: Dict[Tuple[int, int], float] = {}
-    
+
     def add_message(self, user_id: int, chat_id: int, message):
         """Добавляет сообщение в кеш и следит за размером"""
         if not hasattr(message, 'id'): return
-        
+
         key = (user_id, chat_id)
-        
+
         # Проверяем лимит чатов
         if key not in self.cache:
             if len(self.cache) >= self.max_chats:
@@ -44,30 +44,30 @@ class MessageCache:
                 self.cache.pop(oldest_key, None)
                 self.by_id.pop(oldest_key, None)
                 self.last_access.pop(oldest_key, None)
-            
+
             self.cache[key] = deque(maxlen=self.max_size)
             self.by_id[key] = {}
-        
+
         # Если дек полон, при добавлении нового удалится самый старый.
         # Нам нужно вручную удалить его из by_id.
         if len(self.cache[key]) >= self.max_size:
             oldest_msg = self.cache[key][0]
             if hasattr(oldest_msg, 'id'):
                 self.by_id[key].pop(oldest_msg.id, None)
-        
+
         self.cache[key].append(message)
         self.by_id[key][message.id] = message
-        
+
         # Обновляем время последнего доступа
         import time
         self.last_access[key] = time.time()
-    
+
     def get_last_message(self, user_id: int, chat_id: int):
         key = (user_id, chat_id)
         if key not in self.cache or len(self.cache[key]) == 0:
             return None
         return self.cache[key][-1]
-    
+
     def get_message(self, user_id: int, chat_id: int, message_id: int):
         key = (user_id, chat_id)
         return self.by_id.get(key, {}).get(message_id)
@@ -79,7 +79,7 @@ class MessageCache:
             self.cache.pop(k, None)
             self.by_id.pop(k, None)
             self.last_access.pop(k, None)
-    
+
     def cleanup_old(self, max_age_seconds: int = 3600):
         """Удаляет чаты, к которым не было доступа более max_age_seconds"""
         import time
@@ -93,7 +93,7 @@ class MessageCache:
             self.cache.pop(k, None)
             self.by_id.pop(k, None)
             self.last_access.pop(k, None)
-    
+
     def get_memory_usage(self):
         """Возвращает примерное использование памяти в байтах"""
         total_messages = sum(len(msgs) for msgs in self.cache.values())

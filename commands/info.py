@@ -42,37 +42,37 @@ def estimate_registration_date(user_id: int) -> str:
         (8000000000, datetime(2024, 11, 1)), # ~8B - ноябрь 2024
         (9000000000, datetime(2025, 5, 1)),  # ~9B - май 2025 (прогноз)
     ]
-    
+
     # Находим ближайшие опорные точки
     if user_id < reference_points[0][0]:
         return reference_points[0][1].strftime("%d.%m.%Y")
-    
+
     for i in range(len(reference_points) - 1):
         id1, date1 = reference_points[i]
         id2, date2 = reference_points[i + 1]
-        
+
         if id1 <= user_id <= id2:
             # Линейная интерполяция между двумя точками
             id_range = id2 - id1
             date_range = (date2 - date1).total_seconds()
             position = (user_id - id1) / id_range
-            
+
             estimated_timestamp = date1.timestamp() + (date_range * position)
             estimated_date = datetime.fromtimestamp(estimated_timestamp)
-            
+
             return estimated_date.strftime("%d.%m.%Y")
-    
+
     # Если ID больше последней известной точки - экстраполяция
     last_id, last_date = reference_points[-1]
     prev_id, prev_date = reference_points[-2]
-    
+
     id_diff = last_id - prev_id
     date_diff = (last_date - prev_date).days
     rate = date_diff / id_diff  # дней на ID
-    
+
     days_since = (user_id - last_id) * rate
     estimated_date = last_date + timedelta(days=days_since)
-    
+
     return estimated_date.strftime("%d.%m.%Y")
 
 
@@ -84,7 +84,7 @@ async def info_command(event: events.NewMessage.Event):
     """
     try:
         target_user = None
-        
+
         # Если есть ответ на сообщение - показываем инфо автора
         if event.message.is_reply:
             replied_msg = await event.get_reply_message()
@@ -94,10 +94,10 @@ async def info_command(event: events.NewMessage.Event):
             # Проверяем аргументы команды
             text = event.message.text.strip()
             parts = text.split()
-            
+
             if len(parts) > 1:
                 arg = parts[1]
-                
+
                 # Проверяем, это ID (число) или username
                 if arg.isdigit():
                     # Это ID
@@ -128,69 +128,69 @@ async def info_command(event: events.NewMessage.Event):
             else:
                 # Если просто .инфо без параметров - показываем себя
                 target_user = await event.client.get_me()
-        
+
         if not target_user:
             await event.respond("❌ Не удалось найти пользователя. Используй реплай или укажи @username")
             return
-        
+
         # Проверяем, что это пользователь, а не канал/группа
         if not isinstance(target_user, User):
             await event.respond("❌ Это не пользователь")
             return
-        
+
         # Получаем базовую информацию
         user_id = target_user.id
         first_name = getattr(target_user, 'first_name', '')
         last_name = getattr(target_user, 'last_name', '') or ''
         username = await get_user_username(event.client, target_user)
-        
+
         full_name = f"{first_name} {last_name}".strip() or "Unknown"
         username_text = f"@{username}" if username else "нет"
-        
+
         # Пытаемся получить полную информацию (включая био)
         try:
             full_user = await event.client.get_entity(user_id)
             bio = getattr(full_user, 'about', None) or "не указано"
         except Exception:
             bio = "не доступно"
-        
+
         # Вычисляем примерную дату регистрации
         reg_date = estimate_registration_date(user_id)
-        
+
         # Формируем сообщение
-        text = f"👤 <b>Информация о пользователе</b>\n\n"
+        text = "👤 <b>Информация о пользователе</b>\n\n"
         text += f"📝 <b>Имя:</b> {full_name}\n"
         text += f"📱 <b>Username:</b> {username_text}\n"
         text += f"🆔 <b>ID:</b> <code>{user_id}</code>\n"
         text += f"📅 <b>Регистрация:</b> ~{reg_date}\n"
-        
+
         # Дополнительная информация
         is_bot = getattr(target_user, 'bot', False)
         if is_bot:
-            text += f"🤖 <b>Статус:</b> БОТ\n"
-        
+            text += "🤖 <b>Статус:</b> БОТ\n"
+
         is_verified = getattr(target_user, 'verified', False)
         if is_verified:
-            text += f"✅ <b>Верифицирован</b>\n"
-        
+            text += "✅ <b>Верифицирован</b>\n"
+
         is_premium = getattr(target_user, 'premium', False)
         if is_premium:
-            text += f"⭐ <b>Telegram Premium</b>\n"
-        
+            text += "⭐ <b>Telegram Premium</b>\n"
+
         is_scam = getattr(target_user, 'scam', False)
         if is_scam:
-            text += f"⚠️ <b>SCAM (мошенник)</b>\n"
-        
+            text += "⚠️ <b>SCAM (мошенник)</b>\n"
+
         is_fake = getattr(target_user, 'fake', False)
         if is_fake:
-            text += f"⚠️ <b>FAKE (фейк)</b>\n"
-        
+            text += "⚠️ <b>FAKE (фейк)</b>\n"
+
         # Статус
         status = getattr(target_user, 'status', None)
         if status:
             status_type = type(status).__name__
             if status_type == 'UserStatusOnline':
-                text += f"🟢 <b>Онлайн</b>\n"
+                text += "🟢 <b>Онлайн</b>\n"
             elif status_type == 'UserStatusOffline':
                 try:
                     was_online = getattr(status, 'was_online', None)
@@ -206,24 +206,24 @@ async def info_command(event: events.NewMessage.Event):
                             minutes = diff.seconds // 60
                             text += f"🔴 <b>Был(а) онлайн:</b> {minutes} мин. назад\n"
                         else:
-                            text += f"🔴 <b>Был(а) онлайн:</b> только что\n"
+                            text += "🔴 <b>Был(а) онлайн:</b> только что\n"
                 except Exception:
-                    text += f"🔴 <b>Оффлайн</b>\n"
+                    text += "🔴 <b>Оффлайн</b>\n"
             elif status_type == 'UserStatusRecently':
-                text += f"🟡 <b>Был(а) недавно</b>\n"
+                text += "🟡 <b>Был(а) недавно</b>\n"
             elif status_type == 'UserStatusLastWeek':
-                text += f"🟡 <b>Был(а) на неделе</b>\n"
+                text += "🟡 <b>Был(а) на неделе</b>\n"
             elif status_type == 'UserStatusLastMonth':
-                text += f"🟡 <b>Был(а) в месяце</b>\n"
-        
+                text += "🟡 <b>Был(а) в месяце</b>\n"
+
         # Биография (если есть)
         if bio != "не указано" and bio != "не доступно":
             # Обрезаем, если слишком длинное
             bio_short = bio[:200] + "..." if len(bio) > 200 else bio
             text += f"\n📄 <b>О себе:</b>\n{bio_short}"
-        
+
         await event.respond(text, parse_mode='html')
-        
+
     except Exception as e:
         logger.error(f"Ошибка в команде .инфо: {e}", exc_info=True)
         await event.respond(f"❌ Ошибка при получении информации: {e}")

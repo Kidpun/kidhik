@@ -46,3 +46,15 @@ kidhik.service
 deploy.sh
 install.sh
 .cache
+
+# === Локальные файлы агентов/IDE ===
+.claude/
+CLAUDE.md
+AGENTS.md
+GEMINI.md
+.cursor/
+.cursorrules
+.windsurf/
+.aider*
+.pytest_cache/
+.ruff_cache/

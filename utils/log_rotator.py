@@ -53,7 +53,7 @@ class RotatingFileHandler(logging.FileHandler):
 
         thread = threading.Thread(target=check_rotation, daemon=True)
         thread.start()
-    
+
     def _rotate(self):
         """Очищает файл лога (ротация каждые 6 часов)"""
         try:
@@ -88,7 +88,7 @@ class RotatingFileHandler(logging.FileHandler):
 
 class TerminalErrorHandler(logging.Handler):
     """Handler для вывода только критических ошибок в терминал"""
-    
+
     def emit(self, record):
         """Выводит только ERROR и CRITICAL в терминал через earth_animation"""
         if record.levelno >= logging.ERROR:
@@ -105,22 +105,22 @@ class TerminalErrorHandler(logging.Handler):
 def setup_logging(log_file='kidhik.log'):
     """Настраивает логирование с ротацией и анимацией"""
     log_path = Path(__file__).parent.parent / log_file
-    
+
     # Создаём директорию если нужно
     log_path.parent.mkdir(exist_ok=True)
-    
+
     # Очищаем файл при первом запуске (или оставляем старые логи)
     # Можно раскомментировать для очистки:
     # if log_path.exists():
     #     log_path.unlink()
-    
+
     # Настраиваем root logger
     root_logger = logging.getLogger()
     root_logger.setLevel(logging.INFO)
-    
+
     # Удаляем существующие handlers
     root_logger.handlers.clear()
-    
+
     # File handler с ротацией
     file_handler = RotatingFileHandler(str(log_path), encoding='utf-8')
     file_handler.setLevel(logging.DEBUG)
@@ -130,7 +130,7 @@ def setup_logging(log_file='kidhik.log'):
     )
     file_handler.setFormatter(file_formatter)
     root_logger.addHandler(file_handler)
-    
+
     # Terminal handler для вывода в консоль (INFO и выше)
     import sys
     console_handler = logging.StreamHandler(sys.stdout)
@@ -138,29 +138,29 @@ def setup_logging(log_file='kidhik.log'):
     console_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s', datefmt='%H:%M:%S')
     console_handler.setFormatter(console_formatter)
     root_logger.addHandler(console_handler)
-    
+
     # Terminal handler только для ошибок (через earth_animation, если нужно)
     terminal_handler = TerminalErrorHandler()
     terminal_handler.setLevel(logging.ERROR)
     terminal_formatter = logging.Formatter('%(levelname)s: %(message)s')
     terminal_handler.setFormatter(terminal_formatter)
     root_logger.addHandler(terminal_handler)
-    
+
     # Снижаем шум от библиотек
     logging.getLogger('telethon').setLevel(logging.WARNING)
     logging.getLogger('urllib3').setLevel(logging.WARNING)
     logging.getLogger('asyncio').setLevel(logging.WARNING)
-    
+
     # Отключаем шумные WARNING от аудио-библиотек
     logging.getLogger('symphonia').setLevel(logging.ERROR)
     logging.getLogger('symphonia_core').setLevel(logging.ERROR)
     logging.getLogger('symphonia_bundle_mp3').setLevel(logging.ERROR)
     logging.getLogger('symphonia_bundle_mp3.demuxer').setLevel(logging.ERROR)
     logging.getLogger('symphonia_bundle_mp3.parser').setLevel(logging.ERROR)
-    
+
     # Также отключаем шум от shazamio, если есть
     logging.getLogger('shazamio').setLevel(logging.WARNING)
-    
+
     return root_logger
 
 

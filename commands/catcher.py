@@ -24,30 +24,30 @@ def extract_potential_passwords(text):
     """
     if not text: return []
     passwords = []
-    
+
     # 1. Текст в кавычках (обычных и елочках)
     passwords.extend(re.findall(r'"([^"]+)"', text))
     passwords.extend(re.findall(r"'([^']+)'", text))
     passwords.extend(re.findall(r'«([^»]+)»', text))
-    
+
     # 2. Текст в моноширинном формате (`код`)
     passwords.extend(re.findall(r'`([^`]+)`', text))
-    
+
     # 3. После слова "пароль" (берем следующее слово)
     # Пример: Пароль: 1234
     match = re.search(r'(?:пароль|pass|password)[:\s-]*([A-Za-z0-9]+)', text, re.IGNORECASE)
     if match: passwords.append(match.group(1))
-    
+
     # 4. Текст в скобках
     # passwords.extend(re.findall(r'\(([^)]+)\)', text)) # Слишком много мусора
-    
+
     # Чистим и фильтруем
     clean_passwords = []
     for p in passwords:
         p = p.strip()
         if len(p) > 0 and len(p) < 30 and "http" not in p:
             clean_passwords.append(p)
-            
+
     return list(set(clean_passwords)) # Уникальные
 
 async def toggle_catcher(event: events.NewMessage.Event):
@@ -56,7 +56,7 @@ async def toggle_catcher(event: events.NewMessage.Event):
     """
     global CATCHER_ACTIVE
     CATCHER_ACTIVE = not CATCHER_ACTIVE
-    
+
     status = "🟢 <b>ВКЛЮЧЕН</b>" if CATCHER_ACTIVE else "🔴 <b>ВЫКЛЮЧЕН</b>"
     try:
         await event.edit(f"💰 <b>Ловец чеков CryptoBot</b>\nСтатус: {status}", parse_mode='html')
@@ -91,7 +91,7 @@ async def check_catcher_handler(event):
                         logger.info(f"💰 Найден чек (кнопка): {found_code} в чате {event.chat_id}")
                         break
             if found_code: break
-    
+
     if found_code:
         # Активируем асинхронно
         asyncio.create_task(activate_check(event.client, found_code, original_text))
@@ -107,31 +107,31 @@ async def activate_check(client, code, original_text):
             # 1. Отправляем старт
             await conv.send_message(f"/start {code}")
             logger.info(f"🚀 [Catcher] Старт чека: {code}")
-            
+
             # 2. Ждем ответ
             try:
                 response = await conv.get_response()
-            except asyncio.TimeoutError:
-                logger.warning(f"⏳ [Catcher] Таймаут ответа от CryptoBot")
+            except TimeoutError:
+                logger.warning("⏳ [Catcher] Таймаут ответа от CryptoBot")
                 return
 
             text_resp = response.text.lower()
-            
+
             # 3. Анализируем ответ
             if "вы получили" in text_resp:
-                logger.info(f"✅ [Catcher] Чек активирован!")
+                logger.info("✅ [Catcher] Чек активирован!")
                 return
-                
+
             if "введите пароль" in text_resp or "enter password" in text_resp:
                 logger.info("🔐 [Catcher] Требуется пароль. Ищем...")
-                
+
                 passwords = extract_potential_passwords(original_text)
                 if not passwords:
                     logger.warning("❌ [Catcher] Пароли не найдены в тексте.")
                     return
-                
+
                 logger.info(f"💡 [Catcher] Пробуем пароли: {passwords}")
-                
+
                 # Пробуем до 3 паролей
                 for pwd in passwords[:3]:
                     await conv.send_message(pwd)
@@ -144,9 +144,9 @@ async def activate_check(client, code, original_text):
                             logger.info(f"❌ [Catcher] Неверный пароль: {pwd}")
                     except Exception:
                         break
-                        
+
             elif "подпишитесь" in text_resp:
                 logger.info("⚠️ [Catcher] Требуется подписка. Пропуск.")
-                
+
     except Exception as e:
         logger.error(f"❌ [Catcher] Ошибка активации: {e}")

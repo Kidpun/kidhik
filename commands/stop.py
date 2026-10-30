@@ -32,10 +32,10 @@ async def stop_command(event: events.NewMessage.Event):
     Немедленно останавливает все активные процессы пользователя
     """
     user_id = event.sender_id
-    
+
     # Останавливаем активный процесс
     was_active = user_manager.stop(user_id)
-    
+
     # Деактивируем все активные сглыпы для этого пользователя
     try:
         me = await event.client.get_me()
@@ -45,7 +45,7 @@ async def stop_command(event: events.NewMessage.Event):
                 active_sglypa_chats[chat_id] = False
     except Exception:
         pass
-    
+
     # Останавливаем реакции для этого пользователя
     try:
         logger.info(f"Stopping reactions for user {user_id}. Current user_reactions keys: {list(user_reactions.keys())}")
@@ -60,7 +60,7 @@ async def stop_command(event: events.NewMessage.Event):
             logger.info(f"No reactions found to stop for user {user_id}")
     except Exception as e:
         logger.error(f"Error stopping reactions: {e}", exc_info=True)
-    
+
     try:
         if was_active:
             await event.respond("✅ Все активные процессы остановлены")

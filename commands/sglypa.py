@@ -11,7 +11,7 @@ import re
 from collections import deque
 from telethon import events
 from telethon.errors import FloodWaitError
-from telethon.tl.types import MessageMediaDocument, MessageMediaPhoto, DocumentAttributeSticker
+from telethon.tl.types import MessageMediaDocument, DocumentAttributeSticker
 
 from utils.user_manager import user_manager
 from utils.message_cache import message_cache
@@ -36,12 +36,12 @@ async def sglypa_command(event: events.NewMessage.Event):
     Активирует/деактивирует режим сглыпы в текущем чате
     """
     global _cache_cleanup_task
-    
+
     me = await event.client.get_me()
     user_id = me.id
     chat_id = event.chat_id
     key = (user_id, chat_id)
-    
+
     if key in active_sglypa_tasks and not active_sglypa_tasks[key].done():
         # Деактивируем - просто отменяем задачу
         active_sglypa_tasks[key].cancel()
@@ -52,16 +52,16 @@ async def sglypa_command(event: events.NewMessage.Event):
         logger.info(f"[User {user_id}] Сглыпа остановлена в чате {chat_id}")
     else:
         await event.respond("✅ Сглыпа активирована!")
-        
+
         # Инициализируем историю отправленных для этого чата
         sent_history[key] = deque(maxlen=100)
-        
+
         # Парсим историю
         asyncio.create_task(_parse_chat_history(user_id, chat_id, event.client))
-        
+
         if _cache_cleanup_task is None or _cache_cleanup_task.done():
             _cache_cleanup_task = asyncio.create_task(_periodic_cache_cleanup())
-        
+
         # Запускаем цикл сглыпы
         task = asyncio.create_task(_sglypa_loop(user_id, chat_id, event.client))
         active_sglypa_tasks[key] = task
@@ -72,32 +72,32 @@ def _is_advertisement(text: str) -> bool:
     """Проверяет текст на наличие рекламы и стоп-слов"""
     if not text: return False
     text = text.lower()
-    
+
     # Ссылки
     if 'http://' in text or 'https://' in text or 't.me/' in text or 'tg://' in text:
         return True
     if '@' in text and len(text.split()) < 3: # username как отдельное сообщение
         return True
-        
+
     # Ключевые слова рекламы
     stop_words = [
-        r'розыгрыш', r'\d+\s*место', r'подписка', r'спонсор', 
-        r'за рекламу', r'набираю отзывы', r'отпиши лс', 
+        r'розыгрыш', r'\d+\s*место', r'подписка', r'спонсор',
+        r'за рекламу', r'набираю отзывы', r'отпиши лс',
         r'неограничено', r'лучший чат', r'ссылки на сайт',
         r'1000\s*₽', r'500\s*₽', r'200\s*₽'
     ]
-    
+
     for pattern in stop_words:
         if re.search(pattern, text):
             return True
-            
+
     return False
 
 def _should_skip_message(message) -> bool:
     """Проверяет, нужно ли пропустить сообщение"""
-    if not message: 
+    if not message:
         return True
-    
+
     # 1. Стикеры
     if message.sticker:
         return True
@@ -118,7 +118,7 @@ def _should_skip_message(message) -> bool:
         # Реклама и ссылки
         if _is_advertisement(text):
             return True
-            
+
     return False
 
 
@@ -149,7 +149,7 @@ async def _periodic_cache_cleanup():
             temp_dir = Path("temp_media")
             if temp_dir.exists():
                 for f in temp_dir.iterdir():
-                    try: 
+                    try:
                         if f.is_file(): os.remove(f)
                     except Exception: pass
         except Exception:
@@ -158,16 +158,16 @@ async def _periodic_cache_cleanup():
 def _generate_glitch_text(messages):
     """Генерирует склеенный текст из кеша"""
     if not messages: return None
-    
+
     # Собираем все слова из сообщений
     all_words = []
     for m in messages:
         if m.text and not _is_advertisement(m.text):
             words = m.text.split()
             all_words.extend(words)
-    
+
     if not all_words: return None
-    
+
     # Определяем длину (шансы 33/33/33)
     r = random.random()
     if r < 0.33:
@@ -176,14 +176,14 @@ def _generate_glitch_text(messages):
         length = random.randint(3, 4)
     else:
         length = random.randint(5, 6)
-        
+
     # Генерируем
     result_words = []
     for _ in range(length):
         if all_words:
             word = random.choice(all_words)
             result_words.append(word)
-            
+
     return " ".join(result_words)
 
 
@@ -194,17 +194,17 @@ async def _sglypa_loop(user_id: int, chat_id: int, client):
     key = (user_id, chat_id)
     last_msg_id = None
     last_send_time = time.time()
-    
+
     try:
         logger.info(f"[User {user_id}] Сглыпа запущена для чата {chat_id}")
         while True:
             if user_manager.get_active_command(user_id) != f"сглыпа_{chat_id}":
                 break
-                
+
             last_message = message_cache.get_last_message(user_id, chat_id)
             current_time = time.time()
             should_send = False
-            
+
             # Триггеры отправки
             if last_message and last_message.id != last_msg_id:
                 last_msg_id = last_message.id
@@ -213,17 +213,17 @@ async def _sglypa_loop(user_id: int, chat_id: int, client):
                     should_send = True
             elif current_time - last_send_time >= 15: # Реже шлем сами (15 сек)
                 should_send = True
-            
+
             if should_send:
                 cache_deque = message_cache.cache.get(key)
                 if not cache_deque:
                     await asyncio.sleep(1)
                     continue
-                
+
                 messages = list(cache_deque)
                 # Выбираем режим: 35% склейка, 65% оригинал
                 use_glitch = random.random() < 0.35
-                
+
                 if use_glitch:
                     # СКЛЕЙКА
                     text = _generate_glitch_text(messages)
@@ -237,19 +237,19 @@ async def _sglypa_loop(user_id: int, chat_id: int, client):
                 else:
                     # ОРИГИНАЛ
                     valid = [
-                        m for m in messages 
-                        if m.sender_id != user_id 
+                        m for m in messages
+                        if m.sender_id != user_id
                         and not _should_skip_message(m)
                     ]
                     if valid:
                         selected = random.choice(valid)
-                        
+
                         # Обрезка текста до 11 слов
                         if hasattr(selected, 'text') and selected.text:
                             words = selected.text.split()
                             if len(words) > 11:
                                 selected.text = " ".join(words[:11])
-                        
+
                         try:
                             await _send_msg(client, chat_id, selected)
                             last_send_time = time.time()
@@ -257,9 +257,9 @@ async def _sglypa_loop(user_id: int, chat_id: int, client):
                             await asyncio.sleep(e.seconds + 1)
                         except Exception as e:
                             logger.error(f"Sglypa send error: {e}")
-            
+
             await asyncio.sleep(1)
-            
+
     except asyncio.CancelledError:
         pass
     except Exception as e:
@@ -291,7 +291,7 @@ async def _send_msg(client, chat_id, message):
                     except Exception as e:
                         logger.warning(f"Failed to remove sglypa temp file {path}: {e}")
                 return
-        
+
         if hasattr(message, 'text') and message.text:
             await client.send_message(chat_id, message.text)
     except Exception as e:

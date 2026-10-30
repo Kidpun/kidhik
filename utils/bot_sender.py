@@ -3,14 +3,12 @@
 Отправляет медиа с 1 просмотром и удаленные сообщения в ЛС пользователя
 """
 import logging
-import asyncio
 import aiohttp
 import ssl
 from pathlib import Path
-from typing import Optional
 from io import BytesIO
 
-from config import BOT_TOKEN, OWNER_ID
+from config import BOT_TOKEN
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +23,7 @@ def get_bot_api_url() -> str:
 async def send_to_user(user_id: int, text: str, photo_path: Path = None, document_path: Path = None, video_path: Path = None, voice_path: Path = None):
     """
     Отправляет сообщение пользователю через Bot API
-    
+
     :param user_id: ID пользователя, которому отправляем
     :param text: Текст сообщения
     :param photo_path: Путь к фото
@@ -36,22 +34,22 @@ async def send_to_user(user_id: int, text: str, photo_path: Path = None, documen
     if not BOT_TOKEN:
         logger.warning("BOT_TOKEN не установлен, отправка через бота невозможна")
         return
-    
+
     bot_api_url = get_bot_api_url()
     if not bot_api_url:
         return
-    
+
     # Создаем SSL контекст с отключенной проверкой сертификата
     # (для случаев с прокси или корпоративным файрволом)
     ssl_context = ssl.create_default_context()
     ssl_context.check_hostname = False
     ssl_context.verify_mode = ssl.CERT_NONE
-    
+
     connector = aiohttp.TCPConnector(ssl=ssl_context)
-    
+
     # Увеличиваем таймауты для запросов
     timeout = aiohttp.ClientTimeout(total=30, connect=10)
-    
+
     try:
         async with aiohttp.ClientSession(connector=connector, timeout=timeout) as session:
             if photo_path and photo_path.exists():
@@ -68,7 +66,7 @@ async def send_to_user(user_id: int, text: str, photo_path: Path = None, documen
                     if resp.status != 200:
                         error_text = await resp.text()
                         logger.error(f"Ошибка отправки фото: {resp.status} - {error_text}")
-                        
+
             elif video_path and video_path.exists():
                 url = f"{bot_api_url}/sendVideo"
                 data = aiohttp.FormData()
@@ -83,7 +81,7 @@ async def send_to_user(user_id: int, text: str, photo_path: Path = None, documen
                     if resp.status != 200:
                         error_text = await resp.text()
                         logger.error(f"Ошибка отправки видео: {resp.status} - {error_text}")
-                        
+
             elif voice_path and voice_path.exists():
                 url = f"{bot_api_url}/sendVoice"
                 data = aiohttp.FormData()
@@ -98,7 +96,7 @@ async def send_to_user(user_id: int, text: str, photo_path: Path = None, documen
                     if resp.status != 200:
                         error_text = await resp.text()
                         logger.error(f"Ошибка отправки голосового: {resp.status} - {error_text}")
-                        
+
             elif document_path and document_path.exists():
                 url = f"{bot_api_url}/sendDocument"
                 data = aiohttp.FormData()
@@ -133,8 +131,8 @@ async def send_to_user(user_id: int, text: str, photo_path: Path = None, documen
                                 logger.error(f"Ошибка отправки сообщения: {resp.status} - {error_text}")
                         except Exception:
                             logger.error(f"Ошибка отправки сообщения: {resp.status} - {error_text}")
-        
-    except asyncio.TimeoutError:
+
+    except TimeoutError:
         # Таймауты - это нормально, не логируем
         pass
     except aiohttp.ClientError as e:
@@ -156,7 +154,7 @@ async def send_self_destruct_media(user_id: int, media_path: Path, chat_title: s
     """
     Отправляет медиа с 1 просмотром в ЛС пользователя
     """
-    text = f"📸 <b>Медиа с 1 просмотром</b>\n\n"
+    text = "📸 <b>Медиа с 1 просмотром</b>\n\n"
     text += f"💬 <b>Чат:</b> {chat_title}\n"
     if chat_id is not None:
         text += f"🆔 <b>ID {chat_type}:</b> <code>{chat_id}</code>\n"
@@ -164,15 +162,15 @@ async def send_self_destruct_media(user_id: int, media_path: Path, chat_title: s
     if sender_username:
         text += f" (@{sender_username})"
     text += f"\n📎 <b>Тип:</b> {media_type}"
-    
+
     # Добавляем подпись с командой .игнор
     if chat_id is not None:
         text += f"\n\n💡 <i>Если хотите отключить уведомления от этого {chat_type}, пропишите:</i>\n"
         text += f"<code>.игнор {chat_id}</code>"
-    
+
     # Определяем тип медиа по расширению
     ext = media_path.suffix.lower()
-    
+
     if ext in ['.jpg', '.jpeg', '.png', '.gif', '.webp']:
         await send_to_user(user_id, text, photo_path=media_path)
     elif ext in ['.mp4', '.mov', '.avi', '.mkv']:
@@ -183,28 +181,28 @@ async def send_self_destruct_media(user_id: int, media_path: Path, chat_title: s
         await send_to_user(user_id, text, document_path=media_path)
 
 
-async def send_deleted_message(user_id: int, chat_title: str, sender_name: str, sender_username: str, 
+async def send_deleted_message(user_id: int, chat_title: str, sender_name: str, sender_username: str,
                                message_text: str, media_path: Path = None, media_type: str = None):
     """
     Отправляет информацию об удаленном сообщении в ЛС пользователя
     """
-    text = f"🗑️ <b>Удаленное сообщение</b>\n\n"
+    text = "🗑️ <b>Удаленное сообщение</b>\n\n"
     text += f"💬 <b>Чат:</b> {chat_title}\n"
     text += f"👤 <b>Пользователь:</b> {sender_name}"
     if sender_username:
         text += f" (@{sender_username})"
-    text += f"\n\n"
-    
+    text += "\n\n"
+
     if message_text:
         text += f"💬 <b>Сообщение:</b>\n{message_text}\n\n"
-    
+
     if media_type:
         text += f"📎 <b>Медиа:</b> {media_type}"
-    
+
     if media_path and media_path.exists():
         # Определяем тип медиа по расширению
         ext = media_path.suffix.lower()
-        
+
         if ext in ['.jpg', '.jpeg', '.png', '.gif', '.webp']:
             await send_to_user(user_id, text, photo_path=media_path)
         elif ext in ['.mp4', '.mov', '.avi', '.mkv']:

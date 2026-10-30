@@ -19,10 +19,10 @@ def load_facts():
         if not FACTS_FILE.exists():
             logger.warning(f"Файл {FACTS_FILE} не найден")
             return []
-        
-        with open(FACTS_FILE, 'r', encoding='utf-8') as f:
+
+        with open(FACTS_FILE, encoding='utf-8') as f:
             facts = [line.strip() for line in f if line.strip()]
-        
+
         logger.debug(f"Загружено {len(facts)} фактов из {FACTS_FILE}")
         return facts
     except Exception as e:
@@ -36,14 +36,14 @@ async def fact_command(event: events.NewMessage.Event):
     Отправляет случайный факт из файла
     """
     facts = load_facts()
-    
+
     if not facts:
         await event.respond("❌ Файл с фактами не найден или пуст.")
         return
-    
+
     # Выбираем случайный факт
     random_fact = random.choice(facts)
-    
+
     await event.respond(random_fact)
     logger.info(f"Отправлен факт пользователю {event.sender_id}")
 

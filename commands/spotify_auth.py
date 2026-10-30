@@ -19,7 +19,7 @@ async def spotify_auth_command(event: events.NewMessage.Event):
     Показывает ссылку для авторизации Spotify
     """
     user_id = event.sender_id
-    
+
     # Проверяем, настроены ли credentials
     if not spotify_manager.client_id or not spotify_manager.client_secret:
         await event.respond(
@@ -27,7 +27,7 @@ async def spotify_auth_command(event: events.NewMessage.Event):
             "Обратитесь к администратору."
         )
         return
-    
+
     # Проверяем, не авторизован ли уже пользователь
     if spotify_manager.has_credentials(user_id):
         await event.respond(
@@ -36,16 +36,16 @@ async def spotify_auth_command(event: events.NewMessage.Event):
             "Для выхода: .spotify_logout"
         )
         return
-    
+
     # Получаем URL для авторизации
     auth_url = spotify_manager.get_auth_url()
-    
+
     if not auth_url:
         await event.respond(
             "❌ Ошибка при генерации ссылки авторизации."
         )
         return
-    
+
     await event.respond(
         "🔗 <b>Авторизация Spotify</b>\n\n"
         "📋 <b>Инструкция:</b>\n"
@@ -70,7 +70,7 @@ async def spotify_code_command(event: events.NewMessage.Event):
     """
     user_id = event.sender_id
     text = event.message.text.strip()
-    
+
     # Извлекаем код из команды
     parts = text.split(maxsplit=1)
     if len(parts) < 2:
@@ -80,9 +80,9 @@ async def spotify_code_command(event: events.NewMessage.Event):
             parse_mode='html'
         )
         return
-    
+
     code_or_url = parts[1].strip()
-    
+
     # Пробуем извлечь код из URL
     code = None
     if 'code=' in code_or_url:
@@ -93,18 +93,18 @@ async def spotify_code_command(event: events.NewMessage.Event):
     else:
         # Предполагаем, что это сам код
         code = code_or_url
-    
+
     if not code:
         await event.respond(
             "❌ Не удалось извлечь код авторизации.\n"
             "Убедитесь, что вы скопировали полный URL из браузера."
         )
         return
-    
+
     try:
         # Пробуем авторизоваться
         success = spotify_manager.authorize_user(user_id, code)
-        
+
         if success:
             await event.respond(
                 "✅ <b>Spotify успешно подключен!</b>\n\n"
@@ -120,7 +120,7 @@ async def spotify_code_command(event: events.NewMessage.Event):
                 "Попробуйте получить новую ссылку: <code>.spotify_auth</code>",
                 parse_mode='html'
             )
-            
+
     except Exception as e:
         logger.error(f"Spotify auth error for user {user_id}: {e}")
         await event.respond(
@@ -136,7 +136,7 @@ async def spotify_logout_command(event: events.NewMessage.Event):
     Отключает Spotify API
     """
     user_id = event.sender_id
-    
+
     if spotify_manager.logout(user_id):
         await event.respond(
             "✅ Spotify успешно отключен.\n"

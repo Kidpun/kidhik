@@ -25,11 +25,11 @@ async def shazam_command(event: events.NewMessage.Event):
         return
 
     status_msg = await event.edit("🎧 Слушаю...", parse_mode='html')
-    
+
     # Путь для временного файла
     file_path = TEMP_DIR / f"shazam_{reply_msg.id}"
     converted_file = None
-    
+
     try:
         # Скачиваем файл
         downloaded_file = await reply_msg.download_media(file=file_path)
@@ -59,7 +59,7 @@ async def shazam_command(event: events.NewMessage.Event):
             )
             try:
                 stdout, stderr = await asyncio.wait_for(process.communicate(), timeout=30)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 process.kill()
                 logger.warning("FFmpeg conversion timeout, using original file")
                 converted_file = downloaded_file
@@ -86,7 +86,7 @@ async def shazam_command(event: events.NewMessage.Event):
         shazam = Shazam()
         try:
             out = await asyncio.wait_for(shazam.recognize(converted_file), timeout=30)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             await status_msg.edit("❌ Таймаут распознавания. Попробуйте более короткий фрагмент.")
             return
         except Exception as e:
@@ -101,7 +101,7 @@ async def shazam_command(event: events.NewMessage.Event):
             else:
                 await status_msg.edit(f"❌ Ошибка распознавания: {e}")
                 return
-        
+
         # Удаляем файлы после распознавания
         for f in [downloaded_file, converted_file]:
             if f and os.path.exists(f):
@@ -119,16 +119,16 @@ async def shazam_command(event: events.NewMessage.Event):
         subtitle = track.get('subtitle', 'Unknown Artist')
         share_url = track.get('share', {}).get('href', '')
         image_url = track.get('images', {}).get('coverart', '')
-        
+
         # Ссылки на стриминги (если есть)
         # Shazam иногда отдает их в sections -> metadata
-        
+
         response_text = (
             f"🎵 <b>Найдено:</b>\n\n"
             f"🎤 <b>Исполнитель:</b> {subtitle}\n"
             f"🎼 <b>Трек:</b> {title}\n"
         )
-        
+
         if share_url:
             response_text += f"\n🔗 <a href='{share_url}'>Открыть в Shazam</a>"
 
@@ -144,7 +144,7 @@ async def shazam_command(event: events.NewMessage.Event):
                     parse_mode='html'
                 )
                 await status_msg.delete()
-            except Exception as e:
+            except Exception:
                 # Если не удалось отправить фото, просто редактируем статус
                 await status_msg.edit(response_text, parse_mode='html', link_preview=True)
         else:
@@ -153,7 +153,7 @@ async def shazam_command(event: events.NewMessage.Event):
     except Exception as e:
         logger.error(f"Ошибка в команде .шазам: {e}", exc_info=True)
         error_msg = f"❌ Ошибка: {e}"
-        
+
         # Более понятные сообщения об ошибках
         error_str = str(e).lower()
         if 'end of stream' in error_str or 'eof' in error_str:
@@ -167,7 +167,7 @@ async def shazam_command(event: events.NewMessage.Event):
             error_msg = "❌ Таймаут распознавания. Попробуйте более короткий фрагмент."
         elif 'format' in error_str or 'codec' in error_str:
             error_msg = "❌ Неподдерживаемый формат файла. Попробуйте MP3 или WAV."
-        
+
         await status_msg.edit(error_msg, parse_mode='html')
     finally:
         # Очистка временных файлов - ВСЕГДА выполняется
@@ -180,7 +180,7 @@ async def shazam_command(event: events.NewMessage.Event):
                         logger.debug(f"Cleaned up Shazam temp file: {f}")
                     except Exception as e:
                         logger.warning(f"Failed to remove {f}: {e}")
-            
+
             # Уборка мусора - ищем все файлы, начинающиеся с shazam_reply_msg.id
             # (download_media может добавлять расширение)
             if TEMP_DIR.exists():

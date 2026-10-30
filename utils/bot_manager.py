@@ -1,30 +1,26 @@
 import asyncio
 import logging
-import os
 import re
 import random
-import json
 import ssl
-import time
 import aiohttp
 from pathlib import Path
 from telethon import TelegramClient, Button
 from telethon.errors import (
-    SessionPasswordNeededError, 
-    PhoneCodeInvalidError, 
+    SessionPasswordNeededError,
+    PhoneCodeInvalidError,
     PhoneCodeExpiredError,
-    PhoneNumberInvalidError,
     FloodWaitError,
     AuthRestartError
 )
 from utils.database import (
-    add_user, add_api_to_pool, get_random_api, 
+    add_user, get_random_api,
     is_global_enabled, set_global_enabled, get_all_user_ids,
     get_business_connections as get_db_business_connections
 )
 from config import (
-    API_ID as DEFAULT_API_ID, 
-    API_HASH as DEFAULT_API_HASH, 
+    API_ID as DEFAULT_API_ID,
+    API_HASH as DEFAULT_API_HASH,
     BOT_TOKEN,
     OWNER_ID
 )
@@ -46,7 +42,7 @@ def load_text_file(filename):
     path = Path(__file__).parent.parent / 'text' / filename
     if path.exists():
         try:
-            with open(path, 'r', encoding='utf-8') as f:
+            with open(path, encoding='utf-8') as f:
                 return [line.strip() for line in f.readlines() if line.strip()]
         except Exception as e:
             logger.error(f"Error loading {filename}: {e}")
@@ -90,7 +86,7 @@ async def bot_api_request(method, data=None, retries=3):
     ssl_context.verify_mode = ssl.CERT_NONE
     connector = aiohttp.TCPConnector(ssl=ssl_context)
     timeout = aiohttp.ClientTimeout(total=30, connect=10)
-    
+
     for attempt in range(retries):
         try:
             async with aiohttp.ClientSession(connector=connector, timeout=timeout) as session:
@@ -103,17 +99,17 @@ async def bot_api_request(method, data=None, retries=3):
                             error_json = await resp.json()
                             error_code = error_json.get('error_code')
                             description = error_json.get('description', '')
-                            
+
                             # Для callback query игнорируем ошибки устаревших запросов
                             if method == 'answerCallbackQuery':
                                 if error_code == 400 and ('too old' in description.lower() or 'timeout' in description.lower() or 'invalid' in description.lower()):
                                     logger.debug(f"Ignoring old callback query error: {description}")
                                     return None
-                            
+
                             error_text = description or str(error_json)
                         except Exception:
                             error_text = await resp.text()
-                        
+
                         # Логируем только критические ошибки (не 400 для callback query)
                         if method != 'answerCallbackQuery' or error_code != 400:
                             logger.error(f"Bot API Error ({method}): status {resp.status}, {error_text}")
@@ -121,7 +117,7 @@ async def bot_api_request(method, data=None, retries=3):
                             await asyncio.sleep(1 * (attempt + 1))  # Экспоненциальная задержка
                             continue
                         return None
-        except (aiohttp.ClientError, asyncio.TimeoutError) as e:
+        except (TimeoutError, aiohttp.ClientError) as e:
             error_str = str(e).lower()
             # Игнорируем "Session is closed" и таймауты - это нормально
             if 'session is closed' in error_str or 'timeout' in error_str:
@@ -247,20 +243,20 @@ async def handle_business_connection_update(data):
     user_id = user_data.get('id')
     is_enabled = data.get('is_enabled', False)
     first_name = user_data.get('first_name', 'Пользователь')
-    
+
     logger.info(f"🔗 Бизнес-подключение: user_id={user_id}, connection_id={connection_id}, enabled={is_enabled}")
-    
+
     if is_enabled:
         business_connections[user_id] = connection_id
         logger.info(f"✅ Бизнес-подключение добавлено: user_id={user_id}, connection_id={connection_id}")
-        
+
         # Сохраняем пользователя в БД (как бизнес)
         phone = f"business_{user_id}"
         api_id, api_hash = get_random_api(DEFAULT_API_ID, DEFAULT_API_HASH)
         add_user(user_id, phone, f"user_{user_id}", api_id, api_hash, None, None, None, is_business=True, business_connection_id=connection_id)
-        
+
         logger.info(f"✅ Бизнес-аккаунт {user_id} ({first_name}) подключен через Bot API")
-        
+
         # Уведомляем пользователя
         try:
             await send_message(
@@ -286,18 +282,18 @@ async def handle_business_message(message_data, is_edited=False):
     message_id = message_data.get('message_id')
     text = message_data.get('text', '').strip()
     connection_id = message_data.get('business_connection_id')
-    
+
     if not user_id or not connection_id: return
 
     # Log all business messages for debugging
     logger.info(f"📨 Business Message from {user_id}: '{text}' (conn: {connection_id})")
-    
+
     owner_id = None
     for uid, conn_id in business_connections.items():
         if conn_id == connection_id:
             owner_id = uid
             break
-            
+
     if not owner_id: return
     is_own = (user_id == owner_id)
 
@@ -308,13 +304,13 @@ async def handle_business_message(message_data, is_edited=False):
         if text == '.тест':
             if message_id: await delete_business_message(chat_id, message_id)
             response_text = "✅ <b>Бот успешно подключен и работает!</b>"
-        
+
         elif text == '.музыка':
             from utils.spotify import spotify_manager
             track = await spotify_manager.get_current_track(owner_id)
             if track: response_text = f"🎵 <b>Сейчас играет:</b>\n{track['text']}"
             else: response_text = "🔇 Сейчас ничего не играет"
-        
+
         elif text == '.id':
             response_text = f"🆔 <b>Chat ID:</b> <code>{chat_id}</code>\n👤 <b>User ID:</b> <code>{user_id}</code>"
 
@@ -343,7 +339,7 @@ async def handle_business_message(message_data, is_edited=False):
             if len(parts) > 1 and parts[1].isdigit():
                 count = int(parts[1])
                 if count > 5: count = 5
-            
+
             if _troll_phrases:
                 for _ in range(count):
                     phrase = random.choice(_troll_phrases)
@@ -415,7 +411,7 @@ async def handle_start(chat_id, user_id):
         import time
         if user_id in auth_states:
             del auth_states[user_id]
-        
+
         auth_states[user_id] = {'step': 'choose_auth', 'timestamp': time.time()}
         buttons = [
             [Button.inline("Подключить по номеру телефона", b"by_phone")],
@@ -449,9 +445,9 @@ async def handle_message_update(message):
     chat_id = message.get('chat', {}).get('id')
     user_id = message.get('from', {}).get('id')
     text = message.get('text', '').strip()
-    
+
     if not text or not chat_id: return
-    
+
     # Команды
     if text == '/start':
         await handle_start(chat_id, user_id)
@@ -459,48 +455,48 @@ async def handle_message_update(message):
     elif text == '/admin':
         await handle_admin(chat_id, user_id)
         return
-    
+
     # Обработка ввода (телефон, код, пароль)
     state = auth_states.get(user_id)
     if not state: return
-    
+
     step = state.get('step')
-    
+
     if step == 'enter_phone':
         phone = text.replace(' ', '').replace('-', '')
         state['phone'] = phone
         state['step'] = 'wait_code'
-        
+
         # Получаем данные API
         api_id, api_hash = get_random_api(DEFAULT_API_ID, DEFAULT_API_HASH)
-        
+
         # Создаем клиента Telethon для авторизации
         session_name = f"user_{user_id}"
-        
+
         # Получаем параметры устройства
         dev_model, sys_ver, app_ver = state.get('device_params') or get_random_device()
-        
+
         # Уникальный путь для сессии (создаем директорию если нужно)
         # Используем sessions_local для совместимости с instance_manager
         base_dir = Path(__file__).parent.parent
         sessions_dir = base_dir / "sessions_local"
         sessions_dir.mkdir(exist_ok=True)
         session_path = str(sessions_dir / f"{session_name}.session")
-        client = TelegramClient(session_path, api_id, api_hash, 
+        client = TelegramClient(session_path, api_id, api_hash,
                               device_model=dev_model,
                               system_version=sys_ver,
                               app_version=app_ver)
         state['client'] = client
-        
+
         try:
             # Подключаемся к клиенту
             if not client.is_connected():
                 await client.connect()
-            
+
             # Проверяем подключение перед отправкой кода
             if not client.is_connected():
                 await client.connect()
-            
+
             # Отправляем запрос на код (с повторными попытками при AuthRestartError)
             max_retries = 3
             for attempt in range(max_retries):
@@ -523,7 +519,7 @@ async def handle_message_update(message):
                     await client.connect()
                     if attempt == max_retries - 1:
                         raise
-                except ConnectionError as ce:
+                except ConnectionError:
                     logger.warning(f"ConnectionError при отправке кода (попытка {attempt + 1}/{max_retries}), переподключаемся...")
                     # Переподключаемся при ConnectionError
                     try:
@@ -552,16 +548,16 @@ async def handle_message_update(message):
                 await send_message(chat_id, f"❌ Ошибка: {e}")
             if user_id in auth_states:
                 del auth_states[user_id]
-            
+
     elif step == 'wait_code':
         # ВАЖНО: Telegram требует чтобы код вводился с разделителями (антибот мера)
         # Проверяем что в тексте есть пробелы, тире или другие символы
         has_separator = bool(re.search(r'[^0-9]', text))
-        
+
         if not has_separator:
             # Код введен слитно (12345) - ОТКЛОНЯЕМ!
             await send_message(
-                chat_id, 
+                chat_id,
                 "❌ <b>КОД ДОЛЖЕН БЫТЬ С РАЗДЕЛИТЕЛЯМИ!</b>\n\n"
                 "Telegram банит за ввод кода слитно (это признак бота).\n\n"
                 "✅ Введите код правильно:\n"
@@ -570,66 +566,66 @@ async def handle_message_update(message):
                 "• <code>1.2.3.4.5</code> (с точками)"
             )
             return
-        
+
         # Очищаем код от всех символов кроме цифр
         code = re.sub(r'[^0-9]', '', text)
-        
+
         if not code:
             await send_message(chat_id, "❌ Код должен содержать цифры. Попробуйте еще раз.")
             return
-        
+
         client = state.get('client')
         phone = state.get('phone')
         phone_code_hash = state.get('phone_code_hash')
-        
+
         if not client:
             await send_message(chat_id, "❌ <b>Ошибка:</b> Клиент авторизации не найден. Начните процесс заново.")
             if user_id in auth_states:
                 del auth_states[user_id]
             return
-        
+
         try:
             # Проверяем подключение перед входом
             if not client.is_connected():
                 logger.info(f"Клиент отключен, переподключаемся для пользователя {user_id}")
                 await client.connect()
-            
+
             await client.sign_in(phone, code, phone_code_hash=phone_code_hash)
             # Успех - закрываем клиент авторизации
             try:
                 await client.disconnect()
             except Exception:
                 pass
-            
+
             dev_model, sys_ver, app_ver = state.get('device_params') or get_random_device()
             add_user(user_id, phone, f"user_{user_id}", state['api_id'], state['api_hash'],
                      device_model=dev_model, system_version=sys_ver, app_version=app_ver)
             await send_message(chat_id, "✅ <b>Авторизация успешна!</b>\nБот запущен.")
             del auth_states[user_id]
-            
+
             # Небольшая задержка для освобождения блокировок БД
             await asyncio.sleep(0.5)
-            
+
             # Запускаем инстанс в фоне (не блокируем выполнение)
             from utils.instance_manager import instance_manager
             asyncio.create_task(instance_manager.start_client(user_id, f"user_{user_id}", state['api_id'], state['api_hash'],
                                               device_model=dev_model, system_version=sys_ver, app_version=app_ver))
-            
+
             # Отправляем финальное сообщение с рекомендациями
             await send_message(
                 chat_id,
                 "✅ <b>Авторизация завершена!</b>\n\n"
-                f"🔧 Устройство: <code>{dev_name}</code>\n\n"
+                f"🔧 Устройство: <code>{dev_model}</code>\n\n"
                 "⏳ <b>КАРАНТИН БЕЗОПАСНОСТИ: 5 МИНУТ</b>\n\n"
                 "🔒 Команды будут заблокированы первые 5 минут.\n"
                 "Это защита от бана Telegram за подозрительную активность.\n\n"
                 "💡 Через 5 минут используйте /help для списка команд"
             )
-            
+
             # Очищаем состояние авторизации
             if user_id in auth_states:
                 del auth_states[user_id]
-            
+
         except SessionPasswordNeededError:
             state['step'] = 'wait_password'
             await send_message(chat_id, "🔐 <b>Введите пароль 2FA:</b>")
@@ -667,46 +663,46 @@ async def handle_message_update(message):
                 await send_message(chat_id, f"❌ Ошибка: {e}")
             if user_id in auth_states:
                 del auth_states[user_id]
-            
+
     elif step == 'wait_password':
         password = text
         client = state.get('client')
-        
+
         if not client:
             await send_message(chat_id, "❌ <b>Ошибка:</b> Клиент авторизации не найден. Начните процесс заново.")
             if user_id in auth_states:
                 del auth_states[user_id]
             return
-        
+
         try:
             # Проверяем подключение перед входом
             if not client.is_connected():
                 logger.info(f"Клиент отключен, переподключаемся для пользователя {user_id} (2FA)")
                 await client.connect()
-            
+
             await client.sign_in(password=password)
             # Успех - закрываем клиент авторизации
             try:
                 await client.disconnect()
             except Exception:
                 pass
-            
+
             dev_model, sys_ver, app_ver = state.get('device_params') or get_random_device()
             dev_name = state.get('device_name', 'Неизвестно')
             add_user(user_id, state['phone'], f"user_{user_id}", state['api_id'], state['api_hash'],
                      device_model=dev_model, system_version=sys_ver, app_version=app_ver)
-            
+
             # Очищаем состояние авторизации
             del auth_states[user_id]
-            
+
             # Небольшая задержка для освобождения блокировок БД
             await asyncio.sleep(0.5)
-            
+
             # Запускаем инстанс в фоне (не блокируем выполнение)
             from utils.instance_manager import instance_manager
             asyncio.create_task(instance_manager.start_client(user_id, f"user_{user_id}", state['api_id'], state['api_hash'],
                                               device_model=dev_model, system_version=sys_ver, app_version=app_ver))
-            
+
             # Отправляем финальное сообщение с рекомендациями (для 2FA тоже)
             await send_message(
                 chat_id,
@@ -754,19 +750,19 @@ async def handle_callback_query(callback):
     data_raw = callback.get('data')
     callback_id = callback.get('id')
     message_id = callback.get('message', {}).get('message_id')
-    
-    if not data_raw or not user_id: 
+
+    if not data_raw or not user_id:
         logger.debug(f"Empty callback query data or user_id: data={data_raw}, user_id={user_id}")
         return
-    
+
     # Декодируем данные callback query (могут быть bytes или строка)
     if isinstance(data_raw, bytes):
         data = data_raw.decode('utf-8')
     else:
         data = str(data_raw)
-    
+
     logger.debug(f"📱 Callback query from {user_id}: data='{data}'")
-    
+
     # Отвечаем на callback query (игнорируем ошибки для старых запросов)
     try:
         await answer_callback(callback_id)
@@ -775,7 +771,7 @@ async def handle_callback_query(callback):
         error_str = str(e).lower()
         if 'too old' not in error_str and 'timeout' not in error_str and 'session is closed' not in error_str:
             logger.warning(f"Error answering callback query: {e}")
-    
+
     # Обработка admin команд
     if data == 'toggle_bot':
         if user_id != OWNER_ID: return
@@ -788,7 +784,7 @@ async def handle_callback_query(callback):
             logger.error(f"Ошибка toggle_bot: {e}", exc_info=True)
             await send_message(chat_id, f"❌ Ошибка: {e}")
         return
-        
+
     elif data == 'start_broadcast':
         if user_id != OWNER_ID: return
         await send_message(chat_id, "📢 Рассылка начата...")
@@ -796,7 +792,7 @@ async def handle_callback_query(callback):
         count = 0
         failed = 0
         blocked = 0
-        
+
         # Запускаем рассылку в фоне чтобы не блокировать бота
         async def do_broadcast():
             nonlocal count, failed, blocked
@@ -831,7 +827,7 @@ async def handle_callback_query(callback):
                 except Exception as e:
                     failed += 1
                     logger.error(f"Ошибка рассылки пользователю {uid}: {e}")
-            
+
             # Отправляем итоговый отчет
             report = (
                 f"✅ <b>Рассылка завершена!</b>\n\n"
@@ -841,7 +837,7 @@ async def handle_callback_query(callback):
                 f"📊 Всего пользователей: {len(users)}"
             )
             await send_message(chat_id, report)
-        
+
         # Запускаем в фоне
         try:
             asyncio.create_task(safe_task(do_broadcast(), "broadcast"))
@@ -850,7 +846,7 @@ async def handle_callback_query(callback):
             logger.error(f"Ошибка запуска рассылки: {e}", exc_info=True)
             await send_message(chat_id, f"❌ Ошибка запуска рассылки: {e}")
         return
-        
+
     elif data == 'restart_all':
         if user_id != OWNER_ID: return
         try:
@@ -862,12 +858,12 @@ async def handle_callback_query(callback):
             logger.error(f"Ошибка перезапуска клиентов: {e}", exc_info=True)
             await send_message(chat_id, f"❌ Ошибка перезапуска: {e}")
         return
-        
+
     # AUTH FLOW
     try:
         state = auth_states.get(user_id)
         logger.debug(f"Callback query state for user {user_id}: state={state}, data='{data}'")
-        
+
         # Если состояние не найдено, но это кнопки авторизации - создаем состояние заново
         if not state and data in ['by_phone', 'by_business', 'business_confirmed', 'check_business', 'phone_warning_ok', 'dev_iphone', 'dev_android', 'dev_pc', 'dev_random']:
             logger.info(f"State not found for user {user_id}, creating new state for callback '{data}'")
@@ -884,12 +880,12 @@ async def handle_callback_query(callback):
             else:
                 auth_states[user_id] = {'step': 'choose_auth', 'timestamp': time.time()}
             state = auth_states[user_id]
-        
+
         if not state:
             # Если состояния нет и это не auth callback - игнорируем
             logger.debug(f"No auth state for user {user_id}, callback data: {data}")
             return
-        
+
         step = state.get('step')
         logger.info(f"Processing callback: user={user_id}, step='{step}', data='{data}'")
         if step == 'choose_auth':
@@ -913,7 +909,7 @@ async def handle_callback_query(callback):
                         await send_message(chat_id, text, buttons=buttons)
                 else:
                     await send_message(chat_id, text, buttons=buttons)
-                    
+
             elif data == 'by_business':
                 logger.info(f"User {user_id} chose business mode, setting step to 'by_business_confirm'")
                 state['step'] = 'by_business_confirm'
@@ -940,7 +936,7 @@ async def handle_callback_query(callback):
                         await send_message(chat_id, text, buttons=buttons)
                 else:
                     await send_message(chat_id, text, buttons=buttons)
-                    
+
         elif step == 'phone_warning' and data == 'phone_warning_ok':
             state['step'] = 'choose_device'
             text = (
@@ -965,7 +961,7 @@ async def handle_callback_query(callback):
         elif step == 'choose_device':
             dev_params = get_random_device()
             dev_name = "Случайное"
-            
+
             if data == 'dev_iphone':
                 dev_params = ("iPhone 15 Pro Max", "iOS 17.5.1", "10.12.1")
                 dev_name = "iPhone 15 Pro Max"
@@ -975,7 +971,7 @@ async def handle_callback_query(callback):
             elif data == 'dev_pc':
                 dev_params = ("PC 64bit", "Windows 11", "4.16.30 x64")
                 dev_name = "PC Windows 11"
-            
+
             state['device_params'] = dev_params
             state['step'] = 'enter_phone'
             text = f"✅ Выбрано устройство: <b>{dev_name}</b>\n\n📱 <b>Введите номер телефона:</b>\n(например: +79991234567)"
@@ -985,7 +981,7 @@ async def handle_callback_query(callback):
                     await send_message(chat_id, text)
             else:
                 await send_message(chat_id, text)
-            
+
         elif step == 'by_business_confirm' and data == 'business_confirmed':
             logger.info(f"Processing business_confirmed for user {user_id}, step='{step}'")
             # Проверяем, есть ли уже подключение
@@ -1021,7 +1017,7 @@ async def handle_callback_query(callback):
                 else:
                     await send_message(chat_id, text, buttons=buttons)
                 logger.info(f"Sent business setup message to user {user_id}")
-                
+
         elif step == 'check_business' and data == 'check_business':
              if user_id in business_connections:
                  text = "✅ <b>Успешно!</b> Бот подключен в бизнес-режиме."
@@ -1044,13 +1040,13 @@ async def handle_callback_query(callback):
     except Exception as e:
         logger.error(f"Ошибка обработки callback query для {user_id}: {e}", exc_info=True)
         try:
-            await send_message(chat_id, f"❌ Произошла ошибка. Попробуйте начать заново с /start")
+            await send_message(chat_id, "❌ Произошла ошибка. Попробуйте начать заново с /start")
         except Exception:
             pass
 
 async def start_bot_manager():
     logger.info("🚀 Бот-менеджер запущен (Long Polling)")
-    
+
     # Загружаем бизнес-подключения из БД
     try:
         conns = get_db_business_connections()
@@ -1063,38 +1059,38 @@ async def start_bot_manager():
     offset = 0
     consecutive_errors = 0
     max_consecutive_errors = 10
-    
+
     while True:
         try:
             updates = await bot_api_request('getUpdates', {
-                'offset': offset, 
+                'offset': offset,
                 'timeout': 30,
                 'allowed_updates': ['message', 'callback_query', 'business_connection', 'business_message', 'edited_business_message']
             })
-            
+
             # Сбрасываем счетчик ошибок при успешном запросе
             consecutive_errors = 0
-            
+
             if updates and updates.get('ok'):
                 for update in updates['result']:
                     offset = update['update_id'] + 1
-                    
+
                     try:
                         if 'message' in update:
                             bot_id = int(BOT_TOKEN.split(':')[0])
                             if update['message'].get('from', {}).get('id') != bot_id:
                                 # Оборачиваем в safe_task для обработки ошибок
                                 asyncio.create_task(safe_task(handle_message_update(update['message']), "handle_message_update"))
-                        
+
                         elif 'callback_query' in update:
                             asyncio.create_task(safe_task(handle_callback_query(update['callback_query']), "handle_callback_query"))
-                            
+
                         elif 'business_connection' in update:
                             asyncio.create_task(safe_task(handle_business_connection_update(update['business_connection']), "handle_business_connection"))
-                            
+
                         elif 'business_message' in update:
                             asyncio.create_task(safe_task(handle_business_message(update['business_message']), "handle_business_message"))
-                            
+
                         elif 'edited_business_message' in update:
                             asyncio.create_task(safe_task(handle_business_message(update['edited_business_message'], is_edited=True), "handle_edited_business_message"))
                     except Exception as e:
@@ -1114,7 +1110,7 @@ async def start_bot_manager():
                 # Если updates не ok, но не None - логируем и продолжаем
                 logger.debug(f"getUpdates вернул не ok: {updates}")
                 await asyncio.sleep(1)
-                        
+
         except KeyboardInterrupt:
             raise
         except asyncio.CancelledError:
@@ -1123,7 +1119,7 @@ async def start_bot_manager():
         except Exception as e:
             consecutive_errors += 1
             logger.error(f"Manager Loop Error ({consecutive_errors}/{max_consecutive_errors}): {e}", exc_info=True)
-            
+
             if consecutive_errors >= max_consecutive_errors:
                 logger.critical(f"Критическая ошибка: {consecutive_errors} последовательных ошибок. Ждем 60 секунд...")
                 await asyncio.sleep(60)

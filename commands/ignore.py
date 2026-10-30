@@ -4,7 +4,7 @@
 """
 import logging
 from telethon import events
-from telethon.errors import ChannelPrivateError, UsernameNotOccupiedError
+from telethon.errors import UsernameNotOccupiedError
 
 from utils.ignore_list import ignore_manager
 
@@ -17,7 +17,7 @@ async def ignore_command(event: events.NewMessage.Event):
     """
     user_id = event.sender_id
     text = event.message.text.strip()
-    
+
     # Извлекаем аргумент
     parts = text.split(maxsplit=1)
     if len(parts) < 2:
@@ -31,9 +31,9 @@ async def ignore_command(event: events.NewMessage.Event):
             parse_mode='html'
         )
         return
-    
+
     chat_input = parts[1].strip()
-    
+
     try:
         # Пробуем распарсить как число (ID)
         try:
@@ -42,7 +42,7 @@ async def ignore_command(event: events.NewMessage.Event):
             # Если не число, пробуем как username
             if chat_input.startswith('@'):
                 chat_input = chat_input[1:]
-            
+
             # Пробуем получить чат по username
             try:
                 entity = await event.client.get_entity(chat_input)
@@ -57,7 +57,7 @@ async def ignore_command(event: events.NewMessage.Event):
                     parse_mode='html'
                 )
                 return
-        
+
         # Для чатов/каналов используем always_telegram_id
         def norm_chat_id(cid, entity=None):
             # Telethon: Channel (id > 0) → -100{id} (as in official clients)
@@ -78,14 +78,14 @@ async def ignore_command(event: events.NewMessage.Event):
             normed_chat_id = norm_chat_id(chat_id)
         #
         is_now_ignored = ignore_manager.toggle_ignore(user_id, normed_chat_id)
-        
+
         # Получаем название чата для красивого ответа
         try:
             chat = await event.client.get_entity(chat_id)
             chat_title = getattr(chat, 'title', getattr(chat, 'first_name', f'Chat {chat_id}'))
         except Exception:
             chat_title = f'Chat {chat_id}'
-        
+
         if is_now_ignored:
             await event.respond(
                 f"✅ Чат <b>{chat_title}</b> добавлен в игнор.\n\n"
@@ -104,7 +104,7 @@ async def ignore_command(event: events.NewMessage.Event):
                 parse_mode='html'
             )
             logger.info(f"User {user_id} unignored chat {chat_id} ({chat_title})")
-            
+
     except Exception as e:
         logger.error(f"Error in ignore command for user {user_id}: {e}")
         await event.respond(

@@ -37,24 +37,24 @@ async def download_command(event: events.NewMessage.Event):
     args = event.message.text.split()
     if len(args) > 1:
         url = args[1]
-    
+
     # Проверяем реплай
     if not url:
         reply = await event.get_reply_message()
         if reply and reply.text:
             url = reply.text.strip()
-            
+
     if not url or "http" not in url:
         await event.edit("❌ Укажите ссылку!")
         return
-        
+
     await event.edit(f"⬇️ Скачиваю...\n`{url}`")
-    
+
     filename = f"temp_media/dl_{event.id}.mp4"
-    
+
     # Определяем, нужен ли прокси (для TikTok и других заблокированных сервисов)
     is_tiktok = 'tiktok.com' in url or 'vm.tiktok.com' in url or 'douyin.com' in url
-    
+
     # Для TikTok используем мобильный User-Agent и другие методы обхода
     if is_tiktok:
         # Мобильный User-Agent часто работает лучше для TikTok
@@ -82,7 +82,7 @@ async def download_command(event: events.NewMessage.Event):
                 }
             },
         }
-        
+
         # Добавляем прокси, если указан
         if PROXY:
             ydl_opts['proxy'] = PROXY
@@ -98,16 +98,16 @@ async def download_command(event: events.NewMessage.Event):
             'no_warnings': True,
             'max_filesize': 50 * 1024 * 1024,
         }
-    
+
     try:
         # Запускаем в executor (блокирует поток)
         loop = asyncio.get_event_loop()
         await loop.run_in_executor(None, lambda: _download(url, ydl_opts))
-        
+
         if os.path.exists(filename):
             try:
                 await event.edit("⬆️ Загружаю...")
-                await event.client.send_file(event.chat_id, filename, caption=f"📹 Скачано via KidHik", reply_to=event.reply_to_msg_id)
+                await event.client.send_file(event.chat_id, filename, caption="📹 Скачано via KidHik", reply_to=event.reply_to_msg_id)
                 await event.delete()
             finally:
                 # Всегда удаляем файл, даже если отправка упала
@@ -146,7 +146,7 @@ async def download_command(event: events.NewMessage.Event):
                     if os.path.exists(filename):
                         try:
                             await event.edit("⬆️ Загружаю...")
-                            await event.client.send_file(event.chat_id, filename, caption=f"📹 Скачано via KidHik", reply_to=event.reply_to_msg_id)
+                            await event.client.send_file(event.chat_id, filename, caption="📹 Скачано via KidHik", reply_to=event.reply_to_msg_id)
                             await event.delete()
                         finally:
                             try:
@@ -163,7 +163,7 @@ async def download_command(event: events.NewMessage.Event):
                             os.remove(filename)
                         except Exception:
                             pass
-            
+
             error_msg = "❌ Ошибка скачивания (файл не найден)."
             if is_tiktok:
                 error_msg = "❌ <b>Не удалось скачать TikTok видео</b>\n\n"
@@ -176,12 +176,12 @@ async def download_command(event: events.NewMessage.Event):
                 error_msg += "• Настройте прокси: <code>export PROXY=socks5://127.0.0.1:1080</code>\n"
                 error_msg += "• Попробуйте другую ссылку"
             await event.edit(error_msg, parse_mode='html')
-            
+
     except Exception as e:
         logger.error(f"Download error: {e}", exc_info=True)
         error_str = str(e).lower()
         error_msg = ""
-        
+
         # Более понятные сообщения об ошибках
         if 'unable to extract' in error_str or 'extract webpage video data' in error_str:
             ytdlp_version = get_ytdlp_version()
@@ -220,11 +220,11 @@ async def download_command(event: events.NewMessage.Event):
             error_msg = f"❌ <b>Ошибка скачивания</b>\n\n<code>{str(e)[:200]}</code>"
             if is_tiktok:
                 error_msg += "\n\n💡 <b>Совет:</b> TikTok может быть заблокирован. Попробуйте использовать прокси."
-        
+
         await event.edit(error_msg, parse_mode='html')
-        
+
         # Cleanup: Удаляем файл если он остался после ошибки
-        if os.path.exists(filename): 
+        if os.path.exists(filename):
             try:
                 os.remove(filename)
                 logger.debug(f"Cleaned up temp file after error: {filename}")

@@ -25,12 +25,12 @@ async def otkat_command(event: events.NewMessage.Event):
     chat_id = event.chat_id
     chat = await event.get_chat()
     chat_title = getattr(chat, 'title', 'Private Chat')
-    
+
     # Останавливаем предыдущий процесс, если есть
     user_manager.stop(user_id)
-    
+
     logger.info(f"🚀 .откат command received from user {user_id} in chat {chat_id} (title: {chat_title})")
-    
+
     # Создаём задачу для отправки фраз
     task = asyncio.create_task(_otkat_loop(user_id, chat_id, event.client))
     user_manager.set_active(user_id, "откат", task)
@@ -46,22 +46,22 @@ async def _otkat_loop(user_id: int, chat_id: int, client):
         # Получаем свой ID для проверки
         me = await client.get_me()
         me_id = me.id
-        
+
         # Отслеживаем последнее сообщение от других пользователей
         last_other_message_id = None
-        
+
         while True:
             # Проверяем, не остановлен ли процесс
             if not user_manager.is_active(user_id) or user_manager.get_active_command(user_id) != "откат":
                 break
-            
+
             # Проверяем, есть ли новые сообщения от других пользователей
             # Передаем user_id для получения изолированного кеша
             last_message = message_cache.get_last_message(user_id, chat_id)
             if last_message:
                 # Проверяем, что сообщение не от нас
                 msg_user_id = None
-                
+
                 # Пробуем разные способы получить sender_id
                 if hasattr(last_message, 'sender_id'):
                     msg_user_id = last_message.sender_id
@@ -76,17 +76,17 @@ async def _otkat_loop(user_id: int, chat_id: int, client):
                             msg_user_id = None
                         else:
                             msg_user_id = sender_id
-                
+
                 # Если сообщение от другого пользователя
                 if msg_user_id and msg_user_id != me_id:
                         msg_id = getattr(last_message, 'id', None)
                         # Если это новое сообщение (не то же самое)
                         if msg_id != last_other_message_id:
                             last_other_message_id = msg_id
-                            
+
                             # Выбираем случайную фразу
                             phrase = random.choice(OTKAT_PHRASES)
-                            
+
                             # С шансом 20% пытаемся сделать reply на последнее сообщение
                             try:
                                 if random.random() < OTKAT_REPLY_CHANCE:
@@ -127,10 +127,10 @@ async def _otkat_loop(user_id: int, chat_id: int, client):
                                     break
                                 # При других ошибках ждём подольше
                                 await asyncio.sleep(5)
-            
+
             # Ждём перед следующей проверкой (от 1 до 3 секунд)
             await asyncio.sleep(random.uniform(1, 3))
-            
+
     except asyncio.CancelledError:
         logger.info(f"Otkat loop cancelled for user {user_id}")
     except Exception as e:

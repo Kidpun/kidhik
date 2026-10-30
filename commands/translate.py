@@ -23,18 +23,18 @@ async def translate_command(event: events.NewMessage.Event):
 
     args = event.message.text.split()
     target_lang = args[1] if len(args) > 1 else 'ru'
-    
+
     reply = await event.get_reply_message()
     if not reply or not reply.text:
         await event.edit("❌ Ответьте на текстовое сообщение!")
         return
-        
+
     try:
         await event.edit(f"🔄 Перевожу на {target_lang}...")
-        
+
         translator = GoogleTranslator(source='auto', target=target_lang)
         translated = translator.translate(reply.text)
-        
+
         await event.edit(
             f"🌍 <b>Перевод ({target_lang}):</b>\n\n"
             f"{translated}",

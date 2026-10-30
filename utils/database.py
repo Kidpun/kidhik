@@ -1,5 +1,4 @@
 import sqlite3
-import os
 import random
 from pathlib import Path
 
@@ -15,7 +14,7 @@ def init_db():
     # Включаем режим WAL и устанавливаем таймауты для предотвращения "database is locked"
     cursor.execute("PRAGMA busy_timeout=30000")
     cursor.execute("PRAGMA journal_mode=WAL")
-    
+
     # Таблица пользователей (добавили колонки для устройства)
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS users (
@@ -31,7 +30,7 @@ def init_db():
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     ''')
-    
+
     # Таблица пула API ключей
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS api_pool (
@@ -41,7 +40,7 @@ def init_db():
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     ''')
-    
+
     # Таблица глобальных настроек (для админа)
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS settings (
@@ -49,10 +48,10 @@ def init_db():
         value TEXT
     )
     ''')
-    
+
     # По умолчанию бот включен
     cursor.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('global_enabled', '1')")
-    
+
     # Проверка на наличие новых колонок (миграция)
     cursor.execute("PRAGMA table_info(users)")
     columns = [column[1] for column in cursor.fetchall()]
@@ -64,7 +63,7 @@ def init_db():
         cursor.execute('ALTER TABLE users ADD COLUMN is_business INTEGER DEFAULT 0')
     if 'business_connection_id' not in columns:
         cursor.execute('ALTER TABLE users ADD COLUMN business_connection_id TEXT')
-    
+
     conn.commit()
     conn.close()
 

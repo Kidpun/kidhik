@@ -25,9 +25,9 @@ async def yandex_auth_command(event: events.NewMessage.Event):
             parse_mode='html'
         )
         return
-    
+
     user_id = event.sender_id
-    
+
     # Проверяем, не авторизован ли уже пользователь
     if yandex_manager.has_credentials(user_id):
         await event.respond(
@@ -37,10 +37,10 @@ async def yandex_auth_command(event: events.NewMessage.Event):
             parse_mode='html'
         )
         return
-    
+
     # Получаем URL для авторизации
     auth_url = yandex_manager.get_auth_url()
-    
+
     await event.respond(
         "🟡 <b>Авторизация Яндекс Музыки</b>\n\n"
         "📋 <b>Инструкция:</b>\n"
@@ -66,10 +66,10 @@ async def yandex_token_command(event: events.NewMessage.Event):
     if not YANDEX_MUSIC_AVAILABLE:
         await event.respond("❌ Библиотека yandex-music не установлена.")
         return
-    
+
     user_id = event.sender_id
     text = event.message.text.strip()
-    
+
     # Извлекаем токен
     parts = text.split(maxsplit=1)
     if len(parts) < 2:
@@ -78,12 +78,12 @@ async def yandex_token_command(event: events.NewMessage.Event):
             parse_mode='html'
         )
         return
-    
+
     token_or_url = parts[1].strip()
-    
+
     # Пробуем извлечь токен из URL
     token = None
-    
+
     # Если это URL с access_token в hash (#access_token=...)
     if '#access_token=' in token_or_url:
         match = re.search(r'#access_token=([^&\s]+)', token_or_url)
@@ -97,14 +97,14 @@ async def yandex_token_command(event: events.NewMessage.Event):
     else:
         # Предполагаем, что это сам токен
         token = token_or_url
-    
+
     if not token:
         await event.respond(
             "❌ Не удалось извлечь токен.\n"
             "Убедитесь, что вы скопировали полный URL из браузера."
         )
         return
-    
+
     # Пробуем авторизоваться
     try:
         if yandex_manager.authorize_user(user_id, token):
@@ -149,7 +149,7 @@ async def yandex_logout_command(event: events.NewMessage.Event):
     Отключает Яндекс Музыку
     """
     user_id = event.sender_id
-    
+
     if yandex_manager.logout(user_id):
         await event.respond(
             "✅ Яндекс Музыка отключена.\n"
