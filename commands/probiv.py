@@ -7,6 +7,7 @@
 4. Ссылки на мессенджеры
 """
 import logging
+import os
 import re
 import aiohttp
 import random
@@ -18,7 +19,8 @@ from telethon.errors import FloodWaitError
 
 logger = logging.getLogger(__name__)
 
-NUMVERIFY_KEY = 'b279aeb36ee06c9586f0e7a3f3d99177'
+# Ключ берётся из .env (NUMVERIFY_KEY); без него используется только локальная база
+NUMVERIFY_KEY = os.getenv('NUMVERIFY_KEY', '')
 
 # Расширенная база кодов операторов РФ (Резерв)
 OPERATOR_CODES = {
@@ -64,6 +66,8 @@ def normalize_phone(phone: str) -> str:
 
 async def check_numverify(phone: str) -> dict:
     """Запрос к NumVerify API"""
+    if not NUMVERIFY_KEY:
+        return None
     try:
         clean_phone = phone.replace('+', '')
         url = f"http://apilayer.net/api/validate?access_key={NUMVERIFY_KEY}&number={clean_phone}&format=1"
